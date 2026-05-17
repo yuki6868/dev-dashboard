@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 
-import api from "../services/api";
+import api, { cachedGet, clearApiCache } from "../services/api";
 
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
 const STATUS_LABEL = {
@@ -110,24 +110,31 @@ export default function DashboardPage() {
     fetchAll();
   }, []);
 
-async function fetchAll() {
-  await Promise.allSettled([
-    api.post("/api/github/sync-projects"),
-    api.post("/api/github/sync-commits"),
-    api.post("/api/github/sync-issues"),
-  ]);
+async function fetchAll({ forceSync = false } = {}) {
+  if (forceSync) {
+    clearApiCache();
 
-  const [projectsRes, todosRes, inactivityRes, recommendationRes] = await Promise.allSettled([
-    api.get("/api/projects"),
-    api.get("/api/todos"),
-    api.get("/api/projects/inactivity"),
-    api.get("/api/recommend/next-task"),
-  ]);
+    await Promise.allSettled([
+      api.post("/api/github/sync-projects"),
+      api.post("/api/github/sync-commits"),
+      api.post("/api/github/sync-issues"),
+    ]);
+  }
+
+  const [projectsRes, todosRes, inactivityRes, recommendationRes] =
+    await Promise.allSettled([
+      cachedGet("/api/projects"),
+      cachedGet("/api/todos"),
+      cachedGet("/api/projects/inactivity"),
+      cachedGet("/api/recommend/next-task"),
+    ]);
 
   if (projectsRes.status === "fulfilled") setProjects(projectsRes.value.data || []);
   if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
   if (inactivityRes.status === "fulfilled") setInactivity(inactivityRes.value.data || []);
-  if (recommendationRes.status === "fulfilled") setRecommendation(recommendationRes.value.data || null);
+  if (recommendationRes.status === "fulfilled") {
+    setRecommendation(recommendationRes.value.data || null);
+  }
 }
 
   const summary = useMemo(() => {
@@ -220,7 +227,7 @@ async function fetchAll() {
 
         <div className="sync-state">
           <span className="dot" /> 自動更新: ON
-          <button type="button" onClick={fetchAll}>↻</button>
+          <button type="button" onClick={() => fetchAll({ forceSync: true })}>↻</button>
         </div>
       </header>
 
@@ -263,7 +270,7 @@ async function fetchAll() {
 
         <section className="panel today-card">
           <div className="panel-head">
-            <h2>⭐ 今日やること（次の1時間）</h2>
+            <h2>今日やること（次の1時間）</h2>
             <button type="button">すべてのTODOへ →</button>
           </div>
 

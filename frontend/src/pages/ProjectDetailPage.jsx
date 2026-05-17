@@ -8,7 +8,7 @@ import {
   Tooltip,
 } from "recharts";
 
-import api from "../services/api";
+import api, { cachedGet, clearApiCache } from "../services/api";
 
 const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#ef4444"];
 
@@ -84,49 +84,53 @@ export default function ProjectDetailPage() {
     // fetchCommits();
   }, [projectId]);
 
-  async function fetchProjectDetail() {
-    setLoading(true);
+async function fetchProjectDetail({ forceSync = false } = {}) {
+  setLoading(true);
+
+  if (forceSync) {
+    clearApiCache();
 
     await Promise.allSettled([
-        api.post("/api/github/sync-projects"),
-        api.post("/api/github/sync-commits"),
-        api.post("/api/github/sync-issues"),
+      api.post("/api/github/sync-projects"),
+      api.post("/api/github/sync-commits"),
+      api.post("/api/github/sync-issues"),
     ]);
-
-    const [
-        projectRes,
-        gitRes,
-        techRes,
-        readmeQualityRes,
-        readmeDashboardRes,
-        todosRes,
-        devNotesRes,
-        detailRes,
-        commitsRes,
-    ] = await Promise.allSettled([
-        api.get(`/api/projects/${projectId}`),
-        api.get(`/api/projects/${projectId}/git-status`),
-        api.get(`/api/projects/${projectId}/tech-stack`),
-        api.get(`/api/projects/${projectId}/readme-quality`),
-        api.get(`/api/projects/${projectId}/readme-dashboard`),
-        api.get(`/api/todos?project_id=${projectId}`),
-        api.get(`/api/dev-notes?project_id=${projectId}`),
-        api.get(`/api/projects/${projectId}/detail-summary`),
-        api.get(`/api/projects/${projectId}/commits`),
-    ]);
-
-    if (projectRes.status === "fulfilled") setProject(projectRes.value.data);
-    if (gitRes.status === "fulfilled") setGitStatus(gitRes.value.data);
-    if (techRes.status === "fulfilled") setTechStack(techRes.value.data);
-    if (readmeQualityRes.status === "fulfilled") setReadmeQuality(readmeQualityRes.value.data);
-    if (readmeDashboardRes.status === "fulfilled") setReadmeDashboard(readmeDashboardRes.value.data);
-    if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
-    if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
-    if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
-    if (commitsRes.status === "fulfilled") setCommits(commitsRes.value.data || []);
-
-    setLoading(false);
   }
+
+  const [
+    projectRes,
+    gitRes,
+    techRes,
+    readmeQualityRes,
+    readmeDashboardRes,
+    todosRes,
+    devNotesRes,
+    detailRes,
+    commitsRes,
+  ] = await Promise.allSettled([
+    cachedGet(`/api/projects/${projectId}`),
+    cachedGet(`/api/projects/${projectId}/git-status`, 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/tech-stack`, 10 * 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/readme-quality`, 10 * 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/readme-dashboard`, 10 * 60 * 1000),
+    cachedGet(`/api/todos?project_id=${projectId}`, 60 * 1000),
+    cachedGet(`/api/dev-notes?project_id=${projectId}`, 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/detail-summary`, 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/commits`, 5 * 60 * 1000),
+  ]);
+
+  if (projectRes.status === "fulfilled") setProject(projectRes.value.data);
+  if (gitRes.status === "fulfilled") setGitStatus(gitRes.value.data);
+  if (techRes.status === "fulfilled") setTechStack(techRes.value.data);
+  if (readmeQualityRes.status === "fulfilled") setReadmeQuality(readmeQualityRes.value.data);
+  if (readmeDashboardRes.status === "fulfilled") setReadmeDashboard(readmeDashboardRes.value.data);
+  if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
+  if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
+  if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
+  if (commitsRes.status === "fulfilled") setCommits(commitsRes.value.data || []);
+
+  setLoading(false);
+}
 
 //   async function fetchCommits() {
 //     const res = await api.get(`/api/projects/${projectId}/commits`);
@@ -225,7 +229,7 @@ export default function ProjectDetailPage() {
 
         <div className="sync-state">
           <span className="dot" /> 自動更新: ON
-          <button type="button" onClick={fetchProjectDetail}>↻</button>
+          <button type="button" onClick={() => fetchProjectDetail({ forceSync: true })}>↻</button>
         </div>
       </header>
 

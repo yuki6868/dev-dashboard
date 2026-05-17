@@ -81,7 +81,7 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     fetchProjectDetail();
-    fetchCommits();
+    // fetchCommits();
   }, [projectId]);
 
   async function fetchProjectDetail() {
@@ -102,6 +102,7 @@ export default function ProjectDetailPage() {
         todosRes,
         devNotesRes,
         detailRes,
+        commitsRes,
     ] = await Promise.allSettled([
         api.get(`/api/projects/${projectId}`),
         api.get(`/api/projects/${projectId}/git-status`),
@@ -111,6 +112,7 @@ export default function ProjectDetailPage() {
         api.get(`/api/todos?project_id=${projectId}`),
         api.get(`/api/dev-notes?project_id=${projectId}`),
         api.get(`/api/projects/${projectId}/detail-summary`),
+        api.get(`/api/projects/${projectId}/commits`),
     ]);
 
     if (projectRes.status === "fulfilled") setProject(projectRes.value.data);
@@ -121,16 +123,15 @@ export default function ProjectDetailPage() {
     if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
     if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
     if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
-
-    await fetchCommits();
+    if (commitsRes.status === "fulfilled") setCommits(commitsRes.value.data || []);
 
     setLoading(false);
   }
 
-  async function fetchCommits() {
-    const res = await api.get(`/api/projects/${projectId}/commits`);
-    setCommits(res.data || []);
-  }
+//   async function fetchCommits() {
+//     const res = await api.get(`/api/projects/${projectId}/commits`);
+//     setCommits(res.data || []);
+//   }
 
   async function createDevNote() {
     const content = noteInput.trim();
@@ -160,8 +161,37 @@ export default function ProjectDetailPage() {
   const openTodos = todos.filter((todo) => !todo.is_completed);
   const doneTodos = todos.filter((todo) => todo.is_completed);
 
-  const latestCommit = detail?.latest_commit;
   const recentCommits = detail?.recent_commits || [];
+  const githubRecentCommits = commits.slice(0, 8);
+
+  const mergedCommits =
+    recentCommits.length > 0
+        ? recentCommits
+        : githubRecentCommits.map((commit) => ({
+            hash: commit.sha,
+            short_hash: commit.sha?.slice(0, 7),
+            message: commit.message,
+            committed_at: commit.author_date,
+            html_url: commit.html_url,
+        }));
+
+  const latestCommit = mergedCommits[0] || null;
+
+  const commitCount =
+    Number(detail?.commit_count || 0) > 0
+        ? Number(detail?.commit_count || 0)
+        : commits.length;
+
+  const branchName =
+    gitStatus?.branch ||
+    project?.github_default_branch ||
+    "main";
+
+  const languageText =
+    techItems.slice(0, 3).map((item) => item.language).join(", ") ||
+    project?.github_language ||
+    "-";
+
   const contributors = detail?.contributors || [];
 
   const readmeChecks = readmeQuality?.checks || [];
@@ -210,7 +240,7 @@ export default function ProjectDetailPage() {
             <span>
               <b>{project.name}</b>
               <small>{project.description || "説明なし"}</small>
-              <em>★ 0　⑂ {gitStatus?.branch || "main"}　◎ {detail?.commit_count || 0}</em>
+              <em>★ {project.github_stars || 0}　⑂ {branchName}　◎ {commitCount}</em>
             </span>
             <i className="status-chip active">{statusLabel(project.status)}</i>
           </div>
@@ -218,7 +248,7 @@ export default function ProjectDetailPage() {
           <nav className="detail-menu">
             <a className="active">▣ 概要</a>
             <a>◎ Issues <span>{openTodos.length}</span></a>
-            <a>⑂ コミット <span>{detail?.commit_count || 0}</span></a>
+            <a>⑂ コミット <span>{commitCount}</span></a>
             <a>⑃ ブランチ <span>{detail?.branch_count || 0}</span></a>
             <a>◇ タグ</a>
             <a>⚙ 設定</a>
@@ -234,8 +264,8 @@ export default function ProjectDetailPage() {
                 <p>{project.description || readmeDashboard?.problem || "プロジェクト説明が未設定です。"}</p>
 
                 <div className="project-meta-line">
-                  <span>★ 0</span>
-                  <span>⑂ {gitStatus?.branch || "-"}</span>
+                  <span>★ {project.github_stars || 0}</span>
+                  <span>⑂ {branchName}</span>
                   <span>
                     ◎ 最終更新: {timeAgo(
                         gitStatus?.latest_commit_at ||
@@ -286,8 +316,8 @@ export default function ProjectDetailPage() {
 
             <div className="detail-stat-card">
               <span>総コミット数</span>
-              <b>{detail?.commit_count || 0}</b>
-              <small>Git log から取得</small>
+              <b>{commitCount}</b>
+              <small>{recentCommits.length > 0 ? "ローカルGitから取得" : "GitHubから取得"}</small>
             </div>
 
             <div className="detail-stat-card">
@@ -298,8 +328,18 @@ export default function ProjectDetailPage() {
 
             <div className="detail-stat-card">
               <span>最終コミット</span>
-              <b>{timeAgo(gitStatus?.latest_commit_at)}</b>
-              <small>{formatDate(gitStatus?.latest_commit_at)}</small>
+              <b>{timeAgo(
+                gitStatus?.latest_commit_at ||
+                latestCommit?.committed_at ||
+                project.github_pushed_at ||
+                project.github_updated_at
+              )}</b>
+              <small>{formatDate(
+                gitStatus?.latest_commit_at ||
+                latestCommit?.committed_at ||
+                project.github_pushed_at ||
+                project.github_updated_at
+              )}</small>
             </div>
           </div>
 
@@ -349,25 +389,23 @@ export default function ProjectDetailPage() {
             <h2>アクティビティ</h2>
 
             <div className="activity-list">
-              {(recentCommits.length > 0 ? recentCommits : commits.slice(0, 5)).map((commit, index) => {
-                const hash = commit.hash || commit.sha || "";
-                const date = commit.committed_at || commit.author_date;
-
-                return (
-                    <div className="activity-item" key={hash || index}>
+              {mergedCommits.slice(0, 5).map((commit, index) => (
+                <div
+                    className="activity-item"
+                    key={`${commit.hash || commit.sha || "commit"}-${index}`}
+                >
                     <i className={`activity-dot c${index % 4}`} />
                     <span>
-                        <b>{timeAgo(date)}</b>
-                        <small>
-                        コミット <strong>{commit.short_hash || hash.slice(0, 7)}</strong>
-                        </small>
-                        <em>{commit.message}</em>
+                    <b>{timeAgo(commit.committed_at)}</b>
+                    <small>
+                        コミット <strong>{commit.short_hash || commit.hash?.slice(0, 7)}</strong>
+                    </small>
+                    <em>{commit.message}</em>
                     </span>
-                    </div>
-                );
-              })}
+                </div>
+              ))}
 
-              {recentCommits.length === 0 && commits.length === 0 && (
+              {mergedCommits.length === 0 && (
                 <p className="muted">コミット履歴を取得できませんでした。</p>
               )}
             </div>
@@ -457,13 +495,13 @@ export default function ProjectDetailPage() {
               </dd>
 
               <dt>言語</dt>
-              <dd>{techItems.slice(0, 3).map((item) => item.language).join(", ") || "-"}</dd>
+              <dd>{languageText}</dd>
 
               <dt>README品質</dt>
               <dd>{readmeQuality?.percentage ?? 0}%</dd>
 
               <dt>デフォルトブランチ</dt>
-              <dd>{gitStatus?.branch || "main"}</dd>
+              <dd>{branchName}</dd>
             </dl>
           </section>
         </aside>
@@ -526,8 +564,11 @@ export default function ProjectDetailPage() {
             </div>
 
             <div className="github-commit-list">
-                {commits.map((commit) => (
-                <article key={commit.sha} className="github-commit-card">
+                {commits.map((commit, index) => (
+                <article
+                key={`${commit.sha || "github-commit"}-${index}`}
+                className="github-commit-card"
+                >
                     <div>
                     <b>{commit.message}</b>
 
@@ -539,7 +580,7 @@ export default function ProjectDetailPage() {
                         : ""}
                     </p>
 
-                    <small>{commit.sha.slice(0, 7)}</small>
+                    <small>{commit.sha?.slice(0, 7) || "-"}</small>
                     </div>
 
                     {commit.html_url ? (

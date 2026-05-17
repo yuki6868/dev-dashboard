@@ -458,9 +458,26 @@ async function fetchAll({ forceSync = false } = {}) {
           <section className="panel memo-card">
             <h2>最近のメモ・感想</h2>
             <div className="memo-list">
-              <p>5/19 この実装は保守しづらいが、方向性は良い</p>
-              <p>5/18 UIはかなり良くなった 👍</p>
-              <p>5/17 思ったより需要ありそう。継続して改善したい</p>
+              {(worklog?.entries || []).slice(0, 8).map((entry, index) => (
+                <div
+                  key={`${entry.project_id}-${entry.title}-${index}`}
+                  className="memo-item"
+                >
+                  <b>{entry.project_name || "Unknown"}</b>
+
+                  <p>{entry.title}</p>
+
+                  <span>
+                    {entry.created_at
+                      ? new Date(entry.created_at).toLocaleDateString("ja-JP")
+                      : ""}
+                  </span>
+                </div>
+              ))}
+
+              {(!worklog?.entries || worklog.entries.length === 0) && (
+                <p>まだ作業ログがありません</p>
+              )}
             </div>
           </section>
         </div>

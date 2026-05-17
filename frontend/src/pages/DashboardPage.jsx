@@ -418,16 +418,18 @@ async function fetchAll({ forceSync = false } = {}) {
             <h2>放置プロジェクト検知</h2>
             {(inactivity[0] || projects[projects.length - 1]) ? (
               <div className="abandoned-box">
-                <b>{inactivity[0]?.name || projects[projects.length - 1]?.name}</b>
+                <b>{inactivity[0]?.project_name || projects[projects.length - 1]?.name}</b>
                 <span>
                   最終コミット:{" "}
-                  {inactivity[0]?.days_inactive ||
-                    daysFrom(projects[projects.length - 1]?.last_commit_at) ||
-                    32}
+                  {inactivity[0]?.days_since_commit ??
+                    daysFrom(projects[projects.length - 1]?.github_pushed_at) ??
+                    daysFrom(projects[projects.length - 1]?.github_updated_at) ??
+                    "-"}
                   日前
                 </span>
-                <em>⚠ 30日以上コミットなし</em>
-                <em>⚠ README不足</em>
+                {(inactivity[0]?.reasons || ["状態確認が必要です"]).map((reason, index) => (
+                  <em key={index}>⚠ {reason}</em>
+                ))}
               </div>
             ) : (
               <p className="empty">プロジェクトを登録すると検知します</p>

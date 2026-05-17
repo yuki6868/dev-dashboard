@@ -34,3 +34,34 @@ class ProjectResponse(ProjectBase):
 
     class Config:
         from_attributes = True
+
+class TodoBase(BaseModel):
+    project_id: int
+    title: str
+    description: Optional[str] = None
+    todo_type: str = "Improve"
+    priority: str = "medium"
+    status: str = "open"
+
+
+class TodoCreate(TodoBase):
+    pass
+
+
+class TodoUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    todo_type: Optional[str] = None
+    priority: Optional[str] = None
+    status: Optional[str] = None
+    is_completed: Optional[bool] = None
+
+
+class TodoResponse(TodoBase):
+    id: int
+    is_completed: bool
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

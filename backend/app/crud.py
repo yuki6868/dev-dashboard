@@ -72,3 +72,68 @@ def get_latest_git_snapshot(db: Session, project_id: int):
         .order_by(models.GitSnapshot.created_at.desc())
         .first()
     )
+
+from datetime import datetime
+
+
+def get_todos(db: Session, project_id: int | None = None):
+    query = db.query(models.Todo)
+
+    if project_id is not None:
+        query = query.filter(models.Todo.project_id == project_id)
+
+    return query.order_by(models.Todo.created_at.desc()).all()
+
+
+def get_todo(db: Session, todo_id: int):
+    return db.query(models.Todo).filter(models.Todo.id == todo_id).first()
+
+
+def create_todo(db: Session, todo: schemas.TodoCreate):
+    db_todo = models.Todo(**todo.model_dump())
+    db.add(db_todo)
+    db.commit()
+    db.refresh(db_todo)
+    return db_todo
+
+
+def update_todo(db: Session, todo_id: int, todo: schemas.TodoUpdate):
+    db_todo = get_todo(db, todo_id)
+
+    if db_todo is None:
+        return None
+
+    update_data = todo.model_dump(exclude_unset=True)
+
+    for key, value in update_data.items():
+        setattr(db_todo, key, value)
+
+    db.commit()
+    db.refresh(db_todo)
+    return db_todo
+
+
+def complete_todo(db: Session, todo_id: int):
+    db_todo = get_todo(db, todo_id)
+
+    if db_todo is None:
+        return None
+
+    db_todo.is_completed = True
+    db_todo.status = "completed"
+    db_todo.completed_at = datetime.utcnow()
+
+    db.commit()
+    db.refresh(db_todo)
+    return db_todo
+
+
+def delete_todo(db: Session, todo_id: int):
+    db_todo = get_todo(db, todo_id)
+
+    if db_todo is None:
+        return False
+
+    db.delete(db_todo)
+    db.commit()
+    return True

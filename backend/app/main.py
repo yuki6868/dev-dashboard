@@ -8,6 +8,7 @@ from .git_service import get_git_status
 from .readme_service import parse_dashboard_metadata
 from .readme_quality_service import check_readme_quality
 from .tech_service import analyze_tech_stack
+from typing import List, Optional
 
 Base.metadata.create_all(bind=engine)
 
@@ -136,3 +137,54 @@ def read_project_tech_stack(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return analyze_tech_stack(db_project.local_path)
+
+@app.get("/api/todos", response_model=List[schemas.TodoResponse])
+def read_todos(
+    project_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    return crud.get_todos(db, project_id)
+
+
+@app.post("/api/todos", response_model=schemas.TodoResponse)
+def create_todo(todo: schemas.TodoCreate, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, todo.project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return crud.create_todo(db, todo)
+
+
+@app.put("/api/todos/{todo_id}", response_model=schemas.TodoResponse)
+def update_todo(
+    todo_id: int,
+    todo: schemas.TodoUpdate,
+    db: Session = Depends(get_db),
+):
+    db_todo = crud.update_todo(db, todo_id, todo)
+
+    if db_todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    return db_todo
+
+
+@app.post("/api/todos/{todo_id}/complete", response_model=schemas.TodoResponse)
+def complete_todo(todo_id: int, db: Session = Depends(get_db)):
+    db_todo = crud.complete_todo(db, todo_id)
+
+    if db_todo is None:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    return db_todo
+
+
+@app.delete("/api/todos/{todo_id}")
+def delete_todo(todo_id: int, db: Session = Depends(get_db)):
+    ok = crud.delete_todo(db, todo_id)
+
+    if not ok:
+        raise HTTPException(status_code=404, detail="Todo not found")
+
+    return {"deleted": True}

@@ -105,6 +105,7 @@ export default function DashboardPage() {
   const [todos, setTodos] = useState([]);
   const [inactivity, setInactivity] = useState([]);
   const [recommendation, setRecommendation] = useState(null);
+  const [worklog, setWorklog] = useState(null);
 
   useEffect(() => {
     fetchAll();
@@ -121,14 +122,18 @@ async function fetchAll({ forceSync = false } = {}) {
     ]);
   }
 
-  const [projectsRes, todosRes, inactivityRes, recommendationRes] =
+  const [projectsRes, todosRes, inactivityRes, recommendationRes, worklogRes] =
     await Promise.allSettled([
       cachedGet("/api/projects"),
       cachedGet("/api/todos"),
       cachedGet("/api/projects/inactivity"),
       cachedGet("/api/recommend/next-task"),
+      cachedGet("/api/worklogs", 60 * 1000),
     ]);
 
+  if (worklogRes.status === "fulfilled") {
+    setWorklog(worklogRes.value.data || null);
+  }
   if (projectsRes.status === "fulfilled") setProjects(projectsRes.value.data || []);
   if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
   if (inactivityRes.status === "fulfilled") setInactivity(inactivityRes.value.data || []);
@@ -359,12 +364,21 @@ async function fetchAll({ forceSync = false } = {}) {
         <section className="panel log-card">
           <h2>今週の作業ログ</h2>
           <div className="log-list">
-            <b>今週やったこと</b>
-            <p>5/19 候補順位ロジック改善（漢字入力ツール）</p>
-            <p>5/18 IME競合の修正（漢字入力ツール）</p>
-            <p>5/17 SQLiteクエリ最適化（DerbyViz）</p>
-            <b>最近止まっていること</b>
-            <p>README整備 / 配布準備 / スクショ追加</p>
+            <b>今日の作業</b>
+
+            {(worklog?.entries || []).slice(0, 5).map((entry, index) => (
+              <p key={`${entry.type}-${entry.project_id}-${entry.time}-${index}`}>
+                {entry.project_name} / {entry.title}
+              </p>
+            ))}
+
+            {(!worklog?.entries || worklog.entries.length === 0) && (
+              <p>今日の作業ログはまだありません</p>
+            )}
+
+            <b>集計</b>
+            <p>コミット: {worklog?.summary?.commit_count || 0}件</p>
+            <p>完了TODO: {worklog?.summary?.completed_todo_count || 0}件</p>
           </div>
         </section>
 

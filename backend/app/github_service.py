@@ -240,3 +240,43 @@ def get_repositories():
         "ok": True,
         "repositories": repositories,
     }
+
+def get_repository_commits(owner: str, repo: str):
+    token = load_github_token()
+
+    if not token:
+        return {
+            "ok": False,
+            "error": "GitHub token not configured",
+        }
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+
+    try:
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=15,
+        )
+
+        if response.status_code != 200:
+            return {
+                "ok": False,
+                "error": f"GitHub API error: {response.status_code}",
+            }
+
+        return {
+            "ok": True,
+            "commits": response.json(),
+        }
+
+    except Exception as error:
+        return {
+            "ok": False,
+            "error": str(error),
+        }

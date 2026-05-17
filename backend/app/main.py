@@ -21,6 +21,7 @@ from .github_service import (
     disconnect_github,
     get_authenticated_user,
     get_repositories,
+    get_repository_commits,
 )
 
 
@@ -426,3 +427,53 @@ def sync_github_projects(db: Session = Depends(get_db)):
         "ok": True,
         "updated_count": len(updated_projects),
     }
+
+@app.post("/api/github/sync-commits")
+def sync_github_commits(
+    db: Session = Depends(get_db),
+):
+    projects = crud.get_projects(db)
+
+    total_inserted = 0
+
+    for project in projects:
+        if not project.github_url:
+            continue
+
+        try:
+            parts = project.github_url.rstrip("/").split("/")
+
+            owner = parts[-2]
+            repo = parts[-1]
+
+        except Exception:
+            continue
+
+        result = get_repository_commits(owner, repo)
+
+        if not result.get("ok"):
+            continue
+
+        inserted = crud.save_github_commits(
+            db,
+            project.id,
+            result.get("commits", []),
+        )
+
+        total_inserted += inserted
+
+    return {
+        "ok": True,
+        "inserted": total_inserted,
+    }
+
+
+@app.get(
+    "/api/projects/{project_id}/commits",
+    response_model=list[schemas.GitHubCommitResponse],
+)
+def get_project_commits(
+    project_id: int,
+    db: Session = Depends(get_db),
+):
+    return crud.get_project_commits(db, project_id)

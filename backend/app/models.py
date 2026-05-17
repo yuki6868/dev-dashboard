@@ -26,6 +26,24 @@ class Project(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
+class GitHubCommit(Base):
+    __tablename__ = "github_commits"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
+
+    sha = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+
+    author_name = Column(String, nullable=True)
+    author_date = Column(String, nullable=True)
+
+    html_url = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    
 class Todo(Base):
     __tablename__ = "todos"
 

@@ -77,9 +77,11 @@ export default function ProjectDetailPage() {
   const [noteInput, setNoteInput] = useState("");
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [commits, setCommits] = useState([]);
 
   useEffect(() => {
     fetchProjectDetail();
+    fetchCommits();
   }, [projectId]);
 
   async function fetchProjectDetail() {
@@ -115,6 +117,11 @@ export default function ProjectDetailPage() {
     if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
 
     setLoading(false);
+  }
+
+  async function fetchCommits() {
+    const res = await api.get(`/api/projects/${projectId}/commits`);
+    setCommits(res.data || []);
   }
 
   async function createDevNote() {
@@ -484,6 +491,42 @@ export default function ProjectDetailPage() {
               ))}
             </div>
           </div>
+
+          <section className="panel github-commit-panel">
+            <div className="panel-head">
+                <h2>GitHub Commit履歴</h2>
+            </div>
+
+            <div className="github-commit-list">
+                {commits.map((commit) => (
+                <article key={commit.sha} className="github-commit-card">
+                    <div>
+                    <b>{commit.message}</b>
+
+                    <p>
+                        {commit.author_name || "unknown"}
+                        　
+                        {commit.author_date
+                        ? new Date(commit.author_date).toLocaleString("ja-JP")
+                        : ""}
+                    </p>
+
+                    <small>{commit.sha.slice(0, 7)}</small>
+                    </div>
+
+                    {commit.html_url ? (
+                    <a href={commit.html_url} target="_blank" rel="noreferrer">
+                        GitHub
+                    </a>
+                    ) : null}
+                </article>
+                ))}
+
+                {commits.length === 0 && (
+                <p className="muted">GitHub Commit履歴はまだありません。</p>
+                )}
+            </div>
+          </section>
 
           <div className="panel next-action-panel">
             <h2>次の作業</h2>

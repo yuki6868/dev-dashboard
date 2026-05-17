@@ -265,3 +265,58 @@ def update_project_github_metadata(
     db.refresh(db_project)
 
     return db_project
+
+def get_project_commits(
+    db: Session,
+    project_id: int,
+    limit: int = 20,
+):
+    return (
+        db.query(models.GitHubCommit)
+        .filter(models.GitHubCommit.project_id == project_id)
+        .order_by(models.GitHubCommit.author_date.desc())
+        .limit(limit)
+        .all()
+    )
+
+
+def save_github_commits(
+    db: Session,
+    project_id: int,
+    commits: list,
+):
+    inserted = 0
+
+    existing_shas = {
+        row[0]
+        for row in (
+            db.query(models.GitHubCommit.sha)
+            .filter(models.GitHubCommit.project_id == project_id)
+            .all()
+        )
+    }
+
+    for commit in commits:
+        sha = commit.get("sha")
+
+        if not sha or sha in existing_shas:
+            continue
+
+        commit_info = commit.get("commit", {})
+        author = commit_info.get("author", {})
+
+        db_commit = models.GitHubCommit(
+            project_id=project_id,
+            sha=sha,
+            message=commit_info.get("message") or "",
+            author_name=author.get("name"),
+            author_date=author.get("date"),
+            html_url=commit.get("html_url"),
+        )
+
+        db.add(db_commit)
+        inserted += 1
+
+    db.commit()
+
+    return inserted

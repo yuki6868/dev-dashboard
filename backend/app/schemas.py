@@ -95,3 +95,19 @@ class DevNoteResponse(DevNoteBase):
 
     class Config:
         from_attributes = True
+
+
+class GitHubCommitResponse(BaseModel):
+    id: int
+    project_id: int
+
+    sha: str
+    message: str
+
+    author_name: Optional[str] = None
+    author_date: Optional[str] = None
+
+    html_url: Optional[str] = None
+
+    class Config:
+        from_attributes = True

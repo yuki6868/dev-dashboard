@@ -65,3 +65,23 @@ class TodoResponse(TodoBase):
 
     class Config:
         from_attributes = True
+
+class DevNoteBase(BaseModel):
+    project_id: int
+    content: str
+
+
+class DevNoteCreate(DevNoteBase):
+    pass
+
+
+class DevNoteUpdate(BaseModel):
+    content: Optional[str] = None
+
+
+class DevNoteResponse(DevNoteBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

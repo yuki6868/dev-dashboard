@@ -143,19 +143,11 @@ a {
   display: grid;
   grid-template-columns: 260px 1.9fr 300px 300px 310px;
   grid-template-rows:
-    minmax(230px, 0.9fr)
-    minmax(320px, 1.25fr)
-    minmax(260px, 1fr);
+    250px
+    285px
+    1fr;
   gap: 8px;
   padding: 8px;
-}
-
-.abandoned-card {
-  margin-bottom: 135px;
-}
-
-.memo-card {
-  margin-top: 135px;
 }
 
 .panel {
@@ -264,20 +256,44 @@ a {
   overflow: auto;
 }
 
-.abandoned-card {
+.right-bottom-stack {
   grid-column: 5;
   grid-row: 3;
-  align-self: stretch;
-  min-height: 125px;
+
+  display: grid;
+  grid-template-rows: 1fr 0.7fr;
+  gap: 8px;
+
+  min-height: 0;
+  overflow: hidden;
+}
+
+.log-card {
+  grid-column: 5;
+  grid-row: 2;
+  overflow: auto;
+  max-height: 285px;
+}
+
+.right-bottom-stack .abandoned-card,
+.right-bottom-stack .memo-card {
+  grid-column: auto;
+  grid-row: auto;
+
+  height: auto;
+  min-height: 0;
+  max-height: none;
+
+  margin: 0;
   overflow: auto;
 }
 
-.memo-card {
-  grid-column: 5;
-  grid-row: 3;
+.right-bottom-stack .abandoned-card {
   align-self: stretch;
-  min-height: 125px;
-  overflow: auto;
+}
+
+.right-bottom-stack .memo-card {
+  align-self: stretch;
 }
 
 .project-stack {
@@ -2167,4 +2183,87 @@ td:not(:first-child) {
   .settings-grid {
     grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
+}
+
+.right-detail-column {
+  grid-template-rows: 1fr 0.55fr 0.8fr 0.65fr;
+}
+
+.dev-notes-panel {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dev-notes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dev-notes-head h2 {
+  margin: 0;
+}
+
+.dev-notes-head span {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.dev-note-input {
+  margin-top: 12px;
+  min-height: 76px;
+  resize: vertical;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.78);
+  color: #e5edf8;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.dev-note-add-button {
+  margin-top: 10px;
+}
+
+.dev-note-list {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.dev-note-card {
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.dev-note-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dev-note-card-head time {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.dev-note-card-head button {
+  border: none;
+  background: transparent;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.dev-note-card p {
+  margin: 8px 0 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
 }

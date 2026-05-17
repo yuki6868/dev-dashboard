@@ -73,6 +73,8 @@ export default function ProjectDetailPage() {
   const [readmeQuality, setReadmeQuality] = useState(null);
   const [readmeDashboard, setReadmeDashboard] = useState(null);
   const [todos, setTodos] = useState([]);
+  const [devNotes, setDevNotes] = useState([]);
+  const [noteInput, setNoteInput] = useState("");
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -84,21 +86,23 @@ export default function ProjectDetailPage() {
     setLoading(true);
 
     const [
-      projectRes,
-      gitRes,
-      techRes,
-      readmeQualityRes,
-      readmeDashboardRes,
-      todosRes,
-      detailRes,
+        projectRes,
+        gitRes,
+        techRes,
+        readmeQualityRes,
+        readmeDashboardRes,
+        todosRes,
+        devNotesRes,
+        detailRes,
     ] = await Promise.allSettled([
-      api.get(`/api/projects/${projectId}`),
-      api.get(`/api/projects/${projectId}/git-status`),
-      api.get(`/api/projects/${projectId}/tech-stack`),
-      api.get(`/api/projects/${projectId}/readme-quality`),
-      api.get(`/api/projects/${projectId}/readme-dashboard`),
-      api.get(`/api/todos?project_id=${projectId}`),
-      api.get(`/api/projects/${projectId}/detail-summary`),
+        api.get(`/api/projects/${projectId}`),
+        api.get(`/api/projects/${projectId}/git-status`),
+        api.get(`/api/projects/${projectId}/tech-stack`),
+        api.get(`/api/projects/${projectId}/readme-quality`),
+        api.get(`/api/projects/${projectId}/readme-dashboard`),
+        api.get(`/api/todos?project_id=${projectId}`),
+        api.get(`/api/dev-notes?project_id=${projectId}`),
+        api.get(`/api/projects/${projectId}/detail-summary`),
     ]);
 
     if (projectRes.status === "fulfilled") setProject(projectRes.value.data);
@@ -107,9 +111,29 @@ export default function ProjectDetailPage() {
     if (readmeQualityRes.status === "fulfilled") setReadmeQuality(readmeQualityRes.value.data);
     if (readmeDashboardRes.status === "fulfilled") setReadmeDashboard(readmeDashboardRes.value.data);
     if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
+    if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
     if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
 
     setLoading(false);
+  }
+
+  async function createDevNote() {
+    const content = noteInput.trim();
+
+    if (!content) return;
+
+    const res = await api.post("/api/dev-notes", {
+        project_id: Number(projectId),
+        content,
+    });
+
+    setDevNotes((current) => [res.data, ...current]);
+    setNoteInput("");
+  }
+
+  async function deleteDevNote(noteId) {
+    await api.delete(`/api/dev-notes/${noteId}`);
+    setDevNotes((current) => current.filter((note) => note.id !== noteId));
   }
 
   async function openVSCode() {
@@ -341,6 +365,50 @@ export default function ProjectDetailPage() {
             {contributors.length === 0 && (
               <p className="muted">コントリビューター情報を取得できませんでした。</p>
             )}
+          </section>
+
+          <section className="panel dev-notes-panel">
+            <div className="dev-notes-head">
+                <h2>開発ノート</h2>
+                <span>{devNotes.length}件</span>
+            </div>
+
+            <textarea
+                className="dev-note-input"
+                placeholder="今日気づいたこと、詰まったこと、次に直すことを書く"
+                value={noteInput}
+                onChange={(event) => setNoteInput(event.target.value)}
+            />
+
+            <button
+                className="dev-note-add-button"
+                type="button"
+                onClick={createDevNote}
+            >
+                ノート追加
+            </button>
+
+            <div className="dev-note-list">
+                {devNotes.map((note) => (
+                <article className="dev-note-card" key={note.id}>
+                    <div className="dev-note-card-head">
+                    <time>{formatDate(note.created_at)}</time>
+                    <button
+                        type="button"
+                        onClick={() => deleteDevNote(note.id)}
+                    >
+                        削除
+                    </button>
+                    </div>
+
+                    <p>{note.content}</p>
+                </article>
+                ))}
+
+                {devNotes.length === 0 && (
+                <p className="muted">まだ開発ノートはありません。</p>
+                )}
+            </div>
           </section>
 
           <section className="panel info-panel">

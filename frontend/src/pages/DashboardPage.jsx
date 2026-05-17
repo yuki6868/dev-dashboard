@@ -376,28 +376,36 @@ export default function DashboardPage() {
           </table>
         </section>
 
-        <section className="panel abandoned-card">
-          <h2>放置プロジェクト検知</h2>
-          {(inactivity[0] || projects[projects.length - 1]) ? (
-            <div className="abandoned-box">
-              <b>{inactivity[0]?.name || projects[projects.length - 1]?.name}</b>
-              <span>最終コミット: {inactivity[0]?.days_inactive || daysFrom(projects[projects.length - 1]?.last_commit_at) || 32}日前</span>
-              <em>⚠ 30日以上コミットなし</em>
-              <em>⚠ README不足</em>
-            </div>
-          ) : (
-            <p className="empty">プロジェクトを登録すると検知します</p>
-          )}
-        </section>
+        <div className="right-bottom-stack">
+          <section className="panel abandoned-card">
+            <h2>放置プロジェクト検知</h2>
+            {(inactivity[0] || projects[projects.length - 1]) ? (
+              <div className="abandoned-box">
+                <b>{inactivity[0]?.name || projects[projects.length - 1]?.name}</b>
+                <span>
+                  最終コミット:{" "}
+                  {inactivity[0]?.days_inactive ||
+                    daysFrom(projects[projects.length - 1]?.last_commit_at) ||
+                    32}
+                  日前
+                </span>
+                <em>⚠ 30日以上コミットなし</em>
+                <em>⚠ README不足</em>
+              </div>
+            ) : (
+              <p className="empty">プロジェクトを登録すると検知します</p>
+            )}
+          </section>
 
-        <section className="panel memo-card">
-          <h2>最近のメモ・感想</h2>
-          <div className="memo-list">
-            <p>5/19 この実装は保守しづらいが、方向性は良い</p>
-            <p>5/18 UIはかなり良くなった 👍</p>
-            <p>5/17 思ったより需要ありそう。継続して改善したい</p>
-          </div>
-        </section>
+          <section className="panel memo-card">
+            <h2>最近のメモ・感想</h2>
+            <div className="memo-list">
+              <p>5/19 この実装は保守しづらいが、方向性は良い</p>
+              <p>5/18 UIはかなり良くなった 👍</p>
+              <p>5/17 思ったより需要ありそう。継続して改善したい</p>
+            </div>
+          </section>
+        </div>
       </main>
     </div>
   );

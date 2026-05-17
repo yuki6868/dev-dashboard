@@ -156,6 +156,60 @@ def delete_todo(db: Session, todo_id: int):
     db.commit()
     return True
 
+def get_dev_notes(
+    db: Session,
+    project_id: int | None = None,
+):
+    query = db.query(models.DevNote)
+
+    if project_id is not None:
+        query = query.filter(
+            models.DevNote.project_id == project_id
+        )
+
+    return query.order_by(
+        models.DevNote.created_at.desc()
+    ).all()
+
+
+def get_dev_note(
+    db: Session,
+    note_id: int,
+):
+    return db.query(models.DevNote).filter(
+        models.DevNote.id == note_id
+    ).first()
+
+
+def create_dev_note(
+    db: Session,
+    note: schemas.DevNoteCreate,
+):
+    db_note = models.DevNote(
+        **note.model_dump()
+    )
+
+    db.add(db_note)
+    db.commit()
+    db.refresh(db_note)
+
+    return db_note
+
+
+def delete_dev_note(
+    db: Session,
+    note_id: int,
+):
+    db_note = get_dev_note(db, note_id)
+
+    if db_note is None:
+        return False
+
+    db.delete(db_note)
+    db.commit()
+
+    return True
+
 def get_todo_summary(db: Session):
     todos = db.query(models.Todo).all()
 

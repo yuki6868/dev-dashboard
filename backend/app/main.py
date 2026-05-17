@@ -234,6 +234,39 @@ def open_project_vscode(project_id: int, db: Session = Depends(get_db)):
 
     return open_project_in_vscode(db_project.local_path)
 
+@app.get("/api/dev-notes", response_model=List[schemas.DevNoteResponse])
+def read_dev_notes(
+    project_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    return crud.get_dev_notes(db, project_id)
+
+
+@app.post("/api/dev-notes", response_model=schemas.DevNoteResponse)
+def create_dev_note(
+    note: schemas.DevNoteCreate,
+    db: Session = Depends(get_db),
+):
+    db_project = crud.get_project(db, note.project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return crud.create_dev_note(db, note)
+
+
+@app.delete("/api/dev-notes/{note_id}")
+def delete_dev_note(
+    note_id: int,
+    db: Session = Depends(get_db),
+):
+    ok = crud.delete_dev_note(db, note_id)
+
+    if not ok:
+        raise HTTPException(status_code=404, detail="Dev note not found")
+
+    return {"deleted": True}
+
 @app.get("/api/projects/{project_id}/detail-summary")
 def read_project_detail_summary(project_id: int, db: Session = Depends(get_db)):
     db_project = crud.get_project(db, project_id)

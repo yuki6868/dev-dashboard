@@ -9,6 +9,7 @@ from .readme_service import parse_dashboard_metadata
 from .readme_quality_service import check_readme_quality
 from .tech_service import analyze_tech_stack
 from typing import List, Optional
+from .recommend_service import recommend_next_task
 
 Base.metadata.create_all(bind=engine)
 
@@ -188,3 +189,14 @@ def delete_todo(todo_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Todo not found")
 
     return {"deleted": True}
+
+@app.get("/api/recommend/next-task")
+def get_next_task_recommendation(db: Session = Depends(get_db)):
+    result = recommend_next_task(db)
+
+    if result is None:
+        return {
+            "message": "No projects found"
+        }
+
+    return result

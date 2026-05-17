@@ -10,6 +10,9 @@ DEFAULT_SETTINGS = {
         "target_branch": "main",
         "scan_on_startup": True,
     },
+    "editor": {
+        "command": "code",
+    },
     "dashboard": {
         "show_alerts": True,
         "show_tech_chart": True,

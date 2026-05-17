@@ -78,6 +78,9 @@ export default function ProjectDetailPage() {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [commits, setCommits] = useState([]);
+  const [localPathInput, setLocalPathInput] = useState("");
+  const [localPathMessage, setLocalPathMessage] = useState("");
+  const [selectingFolder, setSelectingFolder] = useState(false);
 
   useEffect(() => {
     fetchProjectDetail();
@@ -119,7 +122,10 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
     cachedGet(`/api/projects/${projectId}/commits`, 5 * 60 * 1000),
   ]);
 
-  if (projectRes.status === "fulfilled") setProject(projectRes.value.data);
+  if (projectRes.status === "fulfilled") {
+    setProject(projectRes.value.data);
+    setLocalPathInput(projectRes.value.data.local_path || "");
+  }
   if (gitRes.status === "fulfilled") setGitStatus(gitRes.value.data);
   if (techRes.status === "fulfilled") setTechStack(techRes.value.data);
   if (readmeQualityRes.status === "fulfilled") setReadmeQuality(readmeQualityRes.value.data);
@@ -156,8 +162,70 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
     setDevNotes((current) => current.filter((note) => note.id !== noteId));
   }
 
+  async function saveLocalPath() {
+    setLocalPathMessage("");
+
+    try {
+        const res = await api.put(`/api/projects/${projectId}`, {
+        local_path: localPathInput.trim(),
+        });
+
+        setProject(res.data);
+        clearApiCache();
+        setLocalPathMessage("local_pathを保存しました。");
+        await fetchProjectDetail();
+    } catch (error) {
+        setLocalPathMessage(
+        error?.response?.data?.detail ||
+            error.message ||
+            "local_pathの保存に失敗しました。"
+        );
+    }
+  }
+
+  async function selectLocalPath() {
+    setLocalPathMessage("");
+    setSelectingFolder(true);
+
+    try {
+        const res = await api.post("/api/system/select-folder", {
+        initial_dir: localPathInput || project?.local_path || "",
+        });
+
+        if (!res.data.success || !res.data.path) {
+        setLocalPathMessage(res.data.error || "フォルダ選択をキャンセルしました。");
+        return;
+        }
+
+        const selectedPath = res.data.path;
+
+        setLocalPathInput(selectedPath);
+
+        const updateRes = await api.put(`/api/projects/${projectId}`, {
+        local_path: selectedPath,
+        });
+
+        setProject(updateRes.data);
+        clearApiCache();
+        setLocalPathMessage("フォルダを保存しました。");
+    } catch (error) {
+        setLocalPathMessage(
+        error?.response?.data?.detail ||
+            error.message ||
+            "フォルダ選択に失敗しました。"
+        );
+    } finally {
+        setSelectingFolder(false);
+    }
+  }
+
   async function openVSCode() {
-    await api.post(`/api/projects/${projectId}/open-vscode`);
+    const res = await api.post(`/api/projects/${projectId}/open-vscode`);
+
+    if (!res.data.success) {
+        alert(res.data.error || "エディタを開けませんでした。local_pathを確認してください。");
+        return;
+    }
   }
 
   const techItems = useMemo(() => normalizeTechItems(techStack), [techStack]);
@@ -294,6 +362,46 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
                 VS Codeで開く
               </button>
             </div>
+
+            <div className="local-path-panel">
+            <div className="local-path-head">
+                <div>
+                <b>ローカルパス</b>
+                <p>このプロジェクトを開くフォルダです。</p>
+                </div>
+
+                <button
+                type="button"
+                className="local-path-select"
+                onClick={selectLocalPath}
+                disabled={selectingFolder}
+                >
+                {selectingFolder ? "選択中..." : "フォルダ選択"}
+                </button>
+            </div>
+
+            <div className="local-path-form">
+                <input
+                value={localPathInput}
+                onChange={(e) => setLocalPathInput(e.target.value)}
+                placeholder="/Users/nakagawa/Desktop/application_file/dev_dashboard/dev-dashboard"
+                />
+
+                <button type="button" onClick={saveLocalPath}>
+                保存
+                </button>
+            </div>
+
+            {!project.local_path && (
+                <p className="local-path-warning">
+                local_pathが未設定です。VS Codeで開く前に設定してください。
+                </p>
+            )}
+
+            {localPathMessage && (
+                <p className="local-path-message">{localPathMessage}</p>
+            )}
+            </div>        
           </div>
 
           <div className="detail-tabs">

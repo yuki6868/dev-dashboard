@@ -24,6 +24,8 @@ from .github_service import (
     get_repository_commits,
     get_repository_issues,
 )
+from pydantic import BaseModel
+from .folder_picker_service import select_folder
 
 
 Base.metadata.create_all(bind=engine)
@@ -77,6 +79,13 @@ def get_db():
 def health_check():
     return {"status": "ok"}
 
+class FolderSelectRequest(BaseModel):
+    initial_dir: Optional[str] = None
+
+
+@app.post("/api/system/select-folder")
+def select_system_folder(payload: FolderSelectRequest):
+    return select_folder(payload.initial_dir)
 
 @app.get("/api/projects", response_model=List[schemas.ProjectResponse])
 def read_projects(db: Session = Depends(get_db)):

@@ -198,6 +198,18 @@ export default function SettingsPage() {
               />
             </Field>
 
+            <Field label="エディタ起動コマンド">
+            <input
+                value={settings.editor?.command || "code"}
+                onChange={(e) => patch("editor", "command", e.target.value)}
+                placeholder="code"
+            />
+            </Field>
+
+            <small className="settings-help">
+            例: code / cursor / Visual Studio Code.app / Cursor.app
+            </small>
+
             <Field label="起動時に再スキャン">
               <Toggle
                 checked={settings.git.scan_on_startup}

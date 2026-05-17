@@ -10,6 +10,7 @@ from .readme_quality_service import check_readme_quality
 from .tech_service import analyze_tech_stack
 from typing import List, Optional
 from .recommend_service import recommend_next_task
+from .inactivity_service import detect_inactivity
 
 Base.metadata.create_all(bind=engine)
 
@@ -200,3 +201,7 @@ def get_next_task_recommendation(db: Session = Depends(get_db)):
         }
 
     return result
+
+@app.get("/api/projects/inactivity")
+def read_project_inactivity(db: Session = Depends(get_db)):
+    return detect_inactivity(db)

@@ -299,6 +299,18 @@ a {
 .project-stack {
   display: grid;
   gap: 8px;
+  max-height: calc(100% - 54px);
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.project-stack::-webkit-scrollbar {
+  width: 6px;
+}
+
+.project-stack::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
 }
 
 .project-row {

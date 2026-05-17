@@ -164,6 +164,7 @@ async function fetchAll({ forceSync = false } = {}) {
   }, [projects]);
 
   const topProjects = sortedProjects.slice(0, 5);
+  const visibleProjects = sortedProjects;
   const todoOpen = todos.filter((todo) => !todo.is_completed);
   const nextTodo = recommendation?.recommended_todo || todoOpen[0];
   const nextProject = recommendation?.project_name || topProjects[0]?.name || "プロジェクト未登録";
@@ -194,7 +195,7 @@ async function fetchAll({ forceSync = false } = {}) {
     progress: Math.min(95, Math.max(12, Number(project.progress || project.completion || project.priority * 14 || 35))),
   }));
 
-  const readmeRows = topProjects.slice(0, 3).map((project, index) => ({
+  const readmeRows = visibleProjects.map((project, index) => ({
     id: project.id,
     name: project.name,
     checks: [
@@ -239,7 +240,7 @@ async function fetchAll({ forceSync = false } = {}) {
           </div>
 
           <div className="project-stack">
-            {topProjects.map((project, index) => {
+            {visibleProjects.map((project, index) => {
               const latestDate = project.github_pushed_at || project.github_updated_at || project.last_commit_at || project.updated_at;
               const days = daysFrom(latestDate);
               return (

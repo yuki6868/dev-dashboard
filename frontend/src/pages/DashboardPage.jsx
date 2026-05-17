@@ -184,13 +184,18 @@ async function fetchAll({ forceSync = false } = {}) {
   }, [todos]);
 
   const commitBars = useMemo(() => {
-    const base = Math.max(projects.length, 1);
-    return ["4/21", "4/28", "5/5", "5/12", "5/19", "5/26"].map((day, index) => ({
-      day,
-      commit: Math.round(base * (4 + ((index * 7) % 11))),
-      todo: Math.round(base * (2 + ((index * 5) % 8))),
+    const rows = worklog?.daily_counts || [];
+
+    if (!rows.length) {
+      return [];
+    }
+
+    return rows.map((row) => ({
+      day: row.label,
+      commit: row.commit_count || 0,
+      todo: row.count || 0,
     }));
-  }, [projects.length]);
+  }, [worklog]);
 
   const techRows = useMemo(() => buildTechRows(projects), [projects]);
 

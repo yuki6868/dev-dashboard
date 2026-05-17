@@ -327,3 +327,30 @@ def read_github_user():
 @app.get("/api/github/repositories")
 def read_github_repositories():
     return get_repositories()
+
+@app.post("/api/github/repositories/add", response_model=schemas.ProjectResponse)
+def add_github_repository_as_project(
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    github_url = payload.get("html_url")
+
+    if not github_url:
+        raise HTTPException(status_code=400, detail="GitHub URL is required")
+
+    existing = crud.get_project_by_github_url(db, github_url)
+
+    if existing is not None:
+        return existing
+
+    project = schemas.ProjectCreate(
+        name=payload.get("name") or payload.get("full_name") or "GitHub Project",
+        local_path="",
+        github_url=github_url,
+        description=payload.get("description") or "",
+        status="active",
+        priority="medium",
+        next_action="ローカルにcloneする、またはlocal_pathを設定する",
+    )
+
+    return crud.create_project(db, project)

@@ -4,6 +4,7 @@ from typing import List
 
 from .database import SessionLocal, Base, engine
 from . import crud, schemas, models
+from .git_service import get_git_status
 
 Base.metadata.create_all(bind=engine)
 
@@ -65,3 +66,12 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return {"deleted": True}
+
+@app.get("/api/projects/{project_id}/git-status")
+def read_project_git_status(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return get_git_status(db_project.local_path)

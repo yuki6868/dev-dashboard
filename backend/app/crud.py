@@ -137,3 +137,29 @@ def delete_todo(db: Session, todo_id: int):
     db.delete(db_todo)
     db.commit()
     return True
+
+def get_todo_summary(db: Session):
+    todos = db.query(models.Todo).all()
+
+    total = len(todos)
+    open_count = len([todo for todo in todos if not todo.is_completed])
+    completed_count = len([todo for todo in todos if todo.is_completed])
+
+    high_count = len([
+        todo for todo in todos
+        if str(todo.priority).lower() in ["high", "5", "urgent"]
+    ])
+
+    by_type = {}
+
+    for todo in todos:
+        key = todo.todo_type or "Other"
+        by_type[key] = by_type.get(key, 0) + 1
+
+    return {
+        "total": total,
+        "open": open_count,
+        "completed": completed_count,
+        "high": high_count,
+        "by_type": by_type,
+    }

@@ -147,11 +147,11 @@ export default function ProjectDetailPage() {
         </Link>
 
         <nav className="topnav">
-          <Link to="/">▦ ダッシュボード</Link>
-          <span className="active">□ プロジェクト</span>
-          <span>✦ TODO</span>
-          <span>▤ 作業ログ</span>
-          <span>⚙ 設定</span>
+            <Link to="/">▦ ダッシュボード</Link>
+            <Link className="active" to="/projects">□ プロジェクト</Link>
+            <Link to="/todos">✦ TODO</Link>
+            <Link to="/logs">▤ 作業ログ</Link>
+            <Link to="/settings">⚙ 設定</Link>
         </nav>
 
         <div className="sync-state">
@@ -162,7 +162,7 @@ export default function ProjectDetailPage() {
 
       <main className="project-detail-board">
         <aside className="project-detail-sidebar panel">
-          <Link className="back-link" to="/">
+          <Link className="back-link" to="/projects">
             ← プロジェクト一覧に戻る
           </Link>
 

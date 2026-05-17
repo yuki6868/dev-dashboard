@@ -156,6 +156,11 @@ def read_project_tech_stack(project_id: int, db: Session = Depends(get_db)):
     return analyze_tech_stack(db_project.local_path)
 
 
+@app.get("/api/todos/summary")
+def read_todo_summary(db: Session = Depends(get_db)):
+    return crud.get_todo_summary(db)
+
+
 @app.get("/api/todos", response_model=List[schemas.TodoResponse])
 def read_todos(
     project_id: Optional[int] = None,

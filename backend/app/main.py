@@ -1,20 +1,28 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from .database import SessionLocal, Base, engine
-from . import crud, schemas, models
+from . import crud, schemas
 from .git_service import get_git_status
 from .readme_service import parse_dashboard_metadata
 from .readme_quality_service import check_readme_quality
 from .tech_service import analyze_tech_stack
-from typing import List, Optional
 from .recommend_service import recommend_next_task
 from .inactivity_service import detect_inactivity
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Dev Dashboard API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"http://localhost:\d+",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def get_db():
@@ -33,6 +41,11 @@ def health_check():
 @app.get("/api/projects", response_model=List[schemas.ProjectResponse])
 def read_projects(db: Session = Depends(get_db)):
     return crud.get_projects(db)
+
+
+@app.get("/api/projects/inactivity")
+def read_project_inactivity(db: Session = Depends(get_db)):
+    return detect_inactivity(db)
 
 
 @app.post("/api/projects", response_model=schemas.ProjectResponse)
@@ -73,6 +86,7 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
 
     return {"deleted": True}
 
+
 @app.get("/api/projects/{project_id}/git-status")
 def read_project_git_status(project_id: int, db: Session = Depends(get_db)):
     db_project = crud.get_project(db, project_id)
@@ -81,6 +95,7 @@ def read_project_git_status(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return get_git_status(db_project.local_path)
+
 
 @app.post("/api/projects/{project_id}/refresh-git")
 def refresh_project_git_status(project_id: int, db: Session = Depends(get_db)):
@@ -106,12 +121,8 @@ def read_latest_git_snapshot(project_id: int, db: Session = Depends(get_db)):
     if db_project is None:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    snapshot = crud.get_latest_git_snapshot(db, project_id)
+    return crud.get_latest_git_snapshot(db, project_id)
 
-    if snapshot is None:
-        return None
-
-    return snapshot
 
 @app.get("/api/projects/{project_id}/readme-dashboard")
 def read_project_readme_dashboard(project_id: int, db: Session = Depends(get_db)):
@@ -122,6 +133,7 @@ def read_project_readme_dashboard(project_id: int, db: Session = Depends(get_db)
 
     return parse_dashboard_metadata(db_project.local_path)
 
+
 @app.get("/api/projects/{project_id}/readme-quality")
 def read_project_readme_quality(project_id: int, db: Session = Depends(get_db)):
     db_project = crud.get_project(db, project_id)
@@ -131,6 +143,7 @@ def read_project_readme_quality(project_id: int, db: Session = Depends(get_db)):
 
     return check_readme_quality(db_project.local_path)
 
+
 @app.get("/api/projects/{project_id}/tech-stack")
 def read_project_tech_stack(project_id: int, db: Session = Depends(get_db)):
     db_project = crud.get_project(db, project_id)
@@ -139,6 +152,7 @@ def read_project_tech_stack(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return analyze_tech_stack(db_project.local_path)
+
 
 @app.get("/api/todos", response_model=List[schemas.TodoResponse])
 def read_todos(
@@ -191,17 +205,12 @@ def delete_todo(todo_id: int, db: Session = Depends(get_db)):
 
     return {"deleted": True}
 
+
 @app.get("/api/recommend/next-task")
 def get_next_task_recommendation(db: Session = Depends(get_db)):
     result = recommend_next_task(db)
 
     if result is None:
-        return {
-            "message": "No projects found"
-        }
+        return {"message": "No projects found"}
 
     return result
-
-@app.get("/api/projects/inactivity")
-def read_project_inactivity(db: Session = Depends(get_db)):
-    return detect_inactivity(db)

@@ -1,0 +1,27 @@
+body {
+  margin: 0;
+  background: #111827;
+  color: white;
+  font-family: sans-serif;
+}
+
+.container {
+  padding: 24px;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #1f2937;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.recommendation-card {
+  border: 2px solid #3b82f6;
+}

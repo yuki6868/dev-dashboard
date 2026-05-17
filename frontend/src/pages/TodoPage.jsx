@@ -3,6 +3,30 @@ import { Link } from "react-router-dom";
 
 import api from "../services/api";
 
+const STATUS_COLUMNS = [
+  {
+    key: "open",
+    title: "Todo",
+    help: "まだ着手していないタスク",
+  },
+  {
+    key: "in_progress",
+    title: "In Progress",
+    help: "いま作業中のタスク",
+  },
+  {
+    key: "completed",
+    title: "Done",
+    help: "完了したタスク",
+  },
+];
+
+function normalizeStatus(todo) {
+  if (todo.is_completed || todo.status === "completed") return "completed";
+  if (todo.status === "in_progress") return "in_progress";
+  return "open";
+}
+
 function priorityLabel(priority) {
   const value = String(priority || "medium").toLowerCase();
 
@@ -36,8 +60,10 @@ export default function TodoPage() {
   const [todos, setTodos] = useState([]);
   const [projects, setProjects] = useState([]);
   const [summary, setSummary] = useState(null);
-  const [filter, setFilter] = useState("open");
+  const [filter, setFilter] = useState("all");
   const [projectFilter, setProjectFilter] = useState("all");
+  const [draggingTodoId, setDraggingTodoId] = useState(null);
+  const [dragOverStatus, setDragOverStatus] = useState(null);
 
   const [form, setForm] = useState({
     project_id: "",
@@ -80,6 +106,7 @@ export default function TodoPage() {
       ...form,
       project_id: Number(form.project_id),
       title: form.title.trim(),
+      status: "open",
     });
 
     setForm((current) => ({
@@ -91,15 +118,13 @@ export default function TodoPage() {
     await fetchAll();
   }
 
-  async function completeTodo(todoId) {
-    await api.post(`/api/todos/${todoId}/complete`);
-    await fetchAll();
-  }
+  async function moveTodo(todo, nextStatus) {
+    const currentStatus = normalizeStatus(todo);
+    if (currentStatus === nextStatus) return;
 
-  async function reopenTodo(todo) {
     await api.put(`/api/todos/${todo.id}`, {
-      is_completed: false,
-      status: "open",
+      status: nextStatus,
+      is_completed: nextStatus === "completed",
     });
 
     await fetchAll();
@@ -108,6 +133,37 @@ export default function TodoPage() {
   async function deleteTodo(todoId) {
     await api.delete(`/api/todos/${todoId}`);
     await fetchAll();
+  }
+
+  function handleDragStart(event, todo) {
+    setDraggingTodoId(todo.id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(todo.id));
+  }
+
+  function handleDragEnd() {
+    setDraggingTodoId(null);
+    setDragOverStatus(null);
+  }
+
+  function handleDragOver(event, status) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDragOverStatus(status);
+  }
+
+  async function handleDrop(event, status) {
+    event.preventDefault();
+
+    const todoId = Number(event.dataTransfer.getData("text/plain"));
+    const todo = todos.find((item) => item.id === todoId);
+
+    setDraggingTodoId(null);
+    setDragOverStatus(null);
+
+    if (!todo) return;
+
+    await moveTodo(todo, status);
   }
 
   const projectMap = useMemo(() => {
@@ -120,10 +176,11 @@ export default function TodoPage() {
     return map;
   }, [projects]);
 
-  const filteredTodos = useMemo(() => {
+  const visibleTodos = useMemo(() => {
     return todos.filter((todo) => {
-      if (filter === "open" && todo.is_completed) return false;
-      if (filter === "completed" && !todo.is_completed) return false;
+      const status = normalizeStatus(todo);
+
+      if (filter !== "all" && status !== filter) return false;
 
       if (projectFilter !== "all" && Number(todo.project_id) !== Number(projectFilter)) {
         return false;
@@ -133,8 +190,36 @@ export default function TodoPage() {
     });
   }, [todos, filter, projectFilter]);
 
-  const todayTodos = filteredTodos.slice(0, 6);
-  const backlogTodos = filteredTodos.slice(6);
+  const todosByStatus = useMemo(() => {
+    const groups = {
+      open: [],
+      in_progress: [],
+      completed: [],
+    };
+
+    for (const todo of visibleTodos) {
+      groups[normalizeStatus(todo)].push(todo);
+    }
+
+    return groups;
+  }, [visibleTodos]);
+
+  const counts = useMemo(() => {
+    const open = todos.filter((todo) => normalizeStatus(todo) === "open").length;
+    const inProgress = todos.filter((todo) => normalizeStatus(todo) === "in_progress").length;
+    const completed = todos.filter((todo) => normalizeStatus(todo) === "completed").length;
+    const high = todos.filter((todo) => priorityClass(todo.priority) === "high").length;
+
+    return {
+      total: todos.length,
+      open,
+      inProgress,
+      completed,
+      high,
+    };
+  }, [todos]);
+
+  const backlogTodos = todosByStatus.open.slice(6);
 
   return (
     <div className="devos-shell">
@@ -151,8 +236,8 @@ export default function TodoPage() {
           <Link to="/">▦ ダッシュボード</Link>
           <Link to="/projects">□ プロジェクト</Link>
           <Link className="active" to="/todos">✦ TODO</Link>
-          <span>▤ 作業ログ</span>
-          <span>⚙ 設定</span>
+          <Link to="/logs">▤ 作業ログ</Link>
+          <Link to="/settings">⚙ 設定</Link>
         </nav>
 
         <div className="sync-state">
@@ -236,22 +321,27 @@ export default function TodoPage() {
 
             <div>
               <span>全TODO</span>
-              <b>{summary?.total ?? 0}</b>
+              <b>{summary?.total ?? counts.total}</b>
             </div>
 
             <div>
-              <span>未完了</span>
-              <b>{summary?.open ?? 0}</b>
+              <span>Todo</span>
+              <b>{counts.open}</b>
             </div>
 
             <div>
-              <span>完了</span>
-              <b>{summary?.completed ?? 0}</b>
+              <span>In Progress</span>
+              <b>{counts.inProgress}</b>
+            </div>
+
+            <div>
+              <span>Done</span>
+              <b>{counts.completed}</b>
             </div>
 
             <div>
               <span>高優先度</span>
-              <b>{summary?.high ?? 0}</b>
+              <b>{summary?.high ?? counts.high}</b>
             </div>
           </div>
         </section>
@@ -260,14 +350,15 @@ export default function TodoPage() {
           <div className="todo-title-line">
             <div>
               <h1>TODO</h1>
-              <p>プロジェクト横断で、今日やること・未完了・完了を管理します。</p>
+              <p>ドラッグ＆ドロップで Todo / In Progress / Done に状態遷移できます。</p>
             </div>
 
             <div className="todo-filters">
               <select value={filter} onChange={(event) => setFilter(event.target.value)}>
-                <option value="open">未完了</option>
-                <option value="completed">完了</option>
                 <option value="all">すべて</option>
+                <option value="open">Todo</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Done</option>
               </select>
 
               <select
@@ -286,69 +377,123 @@ export default function TodoPage() {
 
           <div className="todo-stat-grid">
             <div>
-              <span>未完了</span>
-              <b>{summary?.open ?? 0}</b>
+              <span>Todo</span>
+              <b>{counts.open}</b>
             </div>
 
             <div>
-              <span>完了</span>
-              <b>{summary?.completed ?? 0}</b>
+              <span>In Progress</span>
+              <b>{counts.inProgress}</b>
             </div>
 
             <div>
-              <span>高優先度</span>
-              <b>{summary?.high ?? 0}</b>
+              <span>Done</span>
+              <b>{counts.completed}</b>
             </div>
 
             <div>
               <span>表示中</span>
-              <b>{filteredTodos.length}</b>
+              <b>{visibleTodos.length}</b>
             </div>
           </div>
 
-          <div className="todo-section-head">
-            <h2>今日やること</h2>
-            <span>{todayTodos.length}件</span>
-          </div>
+          <div className="todo-kanban-board">
+            {STATUS_COLUMNS.map((column) => {
+              const columnTodos = todosByStatus[column.key] || [];
 
-          <div className="todo-card-list">
-            {todayTodos.map((todo) => (
-              <article className="todo-task-card" key={todo.id}>
-                <div className="todo-task-main">
-                  <button
-                    type="button"
-                    className={todo.is_completed ? "todo-check done" : "todo-check"}
-                    onClick={() => (
-                      todo.is_completed ? reopenTodo(todo) : completeTodo(todo.id)
-                    )}
-                  >
-                    {todo.is_completed ? "✓" : ""}
-                  </button>
-
-                  <div>
-                    <strong>{todo.title}</strong>
-                    <p>{todo.description || "説明なし"}</p>
-
-                    <div className="todo-tags">
-                      <span>{projectMap[todo.project_id]?.name || `Project ${todo.project_id}`}</span>
-                      <em>{todo.todo_type}</em>
-                      <i className={priorityClass(todo.priority)}>
-                        {priorityLabel(todo.priority)}
-                      </i>
+              return (
+                <section
+                  className={
+                    dragOverStatus === column.key
+                      ? "todo-kanban-column drag-over"
+                      : "todo-kanban-column"
+                  }
+                  key={column.key}
+                  onDragOver={(event) => handleDragOver(event, column.key)}
+                  onDragLeave={() => setDragOverStatus(null)}
+                  onDrop={(event) => handleDrop(event, column.key)}
+                >
+                  <div className="todo-kanban-head">
+                    <div>
+                      <h2>{column.title}</h2>
+                      <p>{column.help}</p>
                     </div>
+
+                    <span>{columnTodos.length}</span>
                   </div>
-                </div>
 
-                <div className="todo-task-actions">
-                  <small>{formatDate(todo.created_at)}</small>
-                  <button type="button" onClick={() => deleteTodo(todo.id)}>削除</button>
-                </div>
-              </article>
-            ))}
+                  <div className="todo-kanban-list">
+                    {columnTodos.map((todo) => (
+                      <article
+                        className={
+                          draggingTodoId === todo.id
+                            ? "todo-task-card dragging"
+                            : "todo-task-card"
+                        }
+                        key={todo.id}
+                        draggable
+                        onDragStart={(event) => handleDragStart(event, todo)}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <div className="todo-task-main">
+                          <button
+                            type="button"
+                            className={normalizeStatus(todo) === "completed" ? "todo-check done" : "todo-check"}
+                            onClick={() => (
+                              normalizeStatus(todo) === "completed"
+                                ? moveTodo(todo, "open")
+                                : moveTodo(todo, "completed")
+                            )}
+                            title="クリックで完了/未完了を切り替え"
+                          >
+                            {normalizeStatus(todo) === "completed" ? "✓" : ""}
+                          </button>
 
-            {todayTodos.length === 0 && (
-              <div className="todo-empty">表示するTODOがありません。</div>
-            )}
+                          <div>
+                            <strong>{todo.title}</strong>
+                            <p>{todo.description || "説明なし"}</p>
+
+                            <div className="todo-tags">
+                              <span>{projectMap[todo.project_id]?.name || `Project ${todo.project_id}`}</span>
+                              <em>{todo.todo_type}</em>
+                              <i className={priorityClass(todo.priority)}>
+                                {priorityLabel(todo.priority)}
+                              </i>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="todo-task-actions">
+                          <small>{formatDate(todo.created_at)}</small>
+
+                          <div className="todo-move-actions">
+                            {STATUS_COLUMNS.filter((item) => item.key !== normalizeStatus(todo)).map((item) => (
+                              <button
+                                type="button"
+                                key={item.key}
+                                onClick={() => moveTodo(todo, item.key)}
+                              >
+                                {item.title}
+                              </button>
+                            ))}
+                          </div>
+
+                          <button type="button" className="danger" onClick={() => deleteTodo(todo.id)}>
+                            削除
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+
+                    {columnTodos.length === 0 && (
+                      <div className="todo-empty small">
+                        ここへドラッグできます。
+                      </div>
+                    )}
+                  </div>
+                </section>
+              );
+            })}
           </div>
         </section>
 
@@ -357,7 +502,13 @@ export default function TodoPage() {
 
           <div className="backlog-list">
             {backlogTodos.map((todo) => (
-              <div className="backlog-row" key={todo.id}>
+              <div
+                className="backlog-row"
+                key={todo.id}
+                draggable
+                onDragStart={(event) => handleDragStart(event, todo)}
+                onDragEnd={handleDragEnd}
+              >
                 <span>
                   <b>{todo.title}</b>
                   <small>{projectMap[todo.project_id]?.name || `Project ${todo.project_id}`}</small>

@@ -13,6 +13,9 @@ from .recommend_service import recommend_next_task
 from .inactivity_service import detect_inactivity
 from .vscode_service import open_project_in_vscode
 from .project_detail_service import get_project_detail_summary
+from .worklog_service import get_worklog
+from .settings_service import get_settings, update_settings, reset_settings
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -241,3 +244,21 @@ def read_project_detail_summary(project_id: int, db: Session = Depends(get_db)):
     todos = crud.get_todos(db, project_id)
 
     return get_project_detail_summary(db_project.local_path, todos)
+
+@app.get("/api/worklogs")
+def read_worklogs(date: Optional[str] = None, db: Session = Depends(get_db)):
+    return get_worklog(db, date)
+
+@app.get("/api/settings")
+def read_settings():
+    return get_settings()
+
+
+@app.put("/api/settings")
+def update_app_settings(settings: dict):
+    return update_settings(settings)
+
+
+@app.post("/api/settings/reset")
+def reset_app_settings():
+    return reset_settings()

@@ -105,6 +105,24 @@ def update_todo(db: Session, todo_id: int, todo: schemas.TodoUpdate):
 
     update_data = todo.model_dump(exclude_unset=True)
 
+    next_status = update_data.get("status")
+
+    if next_status == "completed":
+        update_data["is_completed"] = True
+        db_todo.completed_at = datetime.utcnow()
+    elif next_status in ["open", "in_progress"]:
+        update_data["is_completed"] = False
+        db_todo.completed_at = None
+
+    if "is_completed" in update_data:
+        if update_data["is_completed"]:
+            update_data["status"] = "completed"
+            db_todo.completed_at = db_todo.completed_at or datetime.utcnow()
+        else:
+            if update_data.get("status") == "completed":
+                update_data["status"] = "open"
+            db_todo.completed_at = None
+
     for key, value in update_data.items():
         setattr(db_todo, key, value)
 

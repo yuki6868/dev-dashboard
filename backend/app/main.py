@@ -11,6 +11,7 @@ from .readme_quality_service import check_readme_quality
 from .tech_service import analyze_tech_stack
 from .recommend_service import recommend_next_task
 from .inactivity_service import detect_inactivity
+from .vscode_service import open_project_in_vscode
 
 Base.metadata.create_all(bind=engine)
 
@@ -214,3 +215,12 @@ def get_next_task_recommendation(db: Session = Depends(get_db)):
         return {"message": "No projects found"}
 
     return result
+
+@app.post("/api/projects/{project_id}/open-vscode")
+def open_project_vscode(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return open_project_in_vscode(db_project.local_path)

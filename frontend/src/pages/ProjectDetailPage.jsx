@@ -9,6 +9,7 @@ import ReadmeDashboardCard from "../components/ReadmeDashboardCard";
 import TodoList from "../components/TodoList";
 import TechStackChart from "../components/TechStackChart";
 import TodoTypeChart from "../components/TodoTypeChart";
+import OpenVSCodeButton from "../components/OpenVSCodeButton";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
@@ -66,6 +67,8 @@ export default function ProjectDetailPage() {
 
       <h1>{project.name}</h1>
 
+      <OpenVSCodeButton projectId={project.id} />
+
       <p>{project.description}</p>
 
       <GitStatusCard gitStatus={gitStatus} />
@@ -77,7 +80,7 @@ export default function ProjectDetailPage() {
       <TodoTypeChart todos={todos} />
 
       <TechStackCard techStack={techStack} />
-      
+
       <TodoList todos={todos} />
     </div>
   );

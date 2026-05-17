@@ -7,6 +7,8 @@ import GitStatusCard from "../components/GitStatusCard";
 import TechStackCard from "../components/TechStackCard";
 import ReadmeDashboardCard from "../components/ReadmeDashboardCard";
 import TodoList from "../components/TodoList";
+import TechStackChart from "../components/TechStackChart";
+import TodoTypeChart from "../components/TodoTypeChart";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
@@ -70,8 +72,12 @@ export default function ProjectDetailPage() {
 
       <ReadmeDashboardCard data={readmeDashboard} />
 
-      <TechStackCard techStack={techStack} />
+      <TechStackChart techStack={techStack} />
 
+      <TodoTypeChart todos={todos} />
+
+      <TechStackCard techStack={techStack} />
+      
       <TodoList todos={todos} />
     </div>
   );

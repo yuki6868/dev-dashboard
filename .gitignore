@@ -248,3 +248,15 @@ frontend/dist/
 
 # env
 .env
+
+backend/app_settings.json
+backend/*.sqlite
+
+# local settings / secrets
+settings.json
+backend/settings.json
+backend/*.sqlite
+backend/app/settings.json
+data/settings.json
+*.local.json
+.env

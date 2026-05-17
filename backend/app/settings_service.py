@@ -49,6 +49,13 @@ DEFAULT_SETTINGS = {
         "include_worklogs": True,
         "include_tech_stack": True,
     },
+    "github": {
+        "enabled": False,
+        "token": None,
+        "username": None,
+        "avatar_url": None,
+        "html_url": None,
+    },
 }
 
 

@@ -26,14 +26,75 @@ function Field({ label, children }) {
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [github, setGithub] = useState(null);
+  const [githubToken, setGithubToken] = useState("");
+  const [githubMessage, setGithubMessage] = useState("");
 
   useEffect(() => {
     fetchSettings();
+    fetchGithubStatus();
   }, []);
 
   async function fetchSettings() {
     const res = await api.get("/api/settings");
     setSettings(res.data);
+  }
+
+  async function fetchGithubStatus() {
+    try {
+      const res = await api.get("/api/github/status");
+      setGithub(res.data);
+    } catch (error) {
+      setGithubMessage("GitHub連携状態の取得に失敗しました。");
+    }
+  }
+
+  async function connectGithub() {
+    setGithubMessage("");
+
+    if (!githubToken.trim()) {
+      setGithubMessage("GitHub tokenを入力してください。");
+      return;
+    }
+
+    try {
+      const res = await api.post("/api/github/connect", {
+        token: githubToken.trim(),
+      });
+
+      if (!res.data.ok) {
+        const detail = res.data.detail ? ` 詳細: ${res.data.detail}` : "";
+        const status = res.data.status ? ` status=${res.data.status}` : "";
+
+        setGithubMessage(
+          `${res.data.error || "GitHub連携に失敗しました。"}${status}${detail}`,
+        );
+        return;
+      }
+
+      setGithub(res.data.github);
+      setGithubToken("");
+      setGithubMessage("GitHubアカウントを連携しました。");
+    } catch (error) {
+      const message =
+        error?.response?.data?.detail ||
+        error?.response?.data?.error ||
+        error.message ||
+        "GitHub連携に失敗しました。";
+
+      setGithubMessage(`GitHub連携に失敗しました。詳細: ${message}`);
+    }
+  }
+
+  async function disconnectGithub() {
+    try {
+      const res = await api.post("/api/github/disconnect");
+      setGithub(res.data.github);
+      setGithubToken("");
+      setGithubMessage("GitHub連携を解除しました。");
+    } catch (error) {
+      setGithubMessage("GitHub連携解除に失敗しました。");
+    }
   }
 
   function patch(section, key, value) {
@@ -287,6 +348,66 @@ export default function SettingsPage() {
                 <Toggle checked={settings.ai[key]} onChange={(v) => patch("ai", key, v)} />
               </Field>
             ))}
+          </div>
+          <div className="panel settings-card github-settings-card">
+            <h2>GitHubアカウント連携</h2>
+
+            {github?.connected ? (
+              <div className="github-connected-box">
+                {github.avatar_url ? (
+                  <img
+                    className="github-avatar"
+                    src={github.avatar_url}
+                    alt="GitHub avatar"
+                  />
+                ) : null}
+
+                <div>
+                  <b>{github.username}</b>
+                  <p>GitHub連携済み</p>
+                  <small>token: {github.token_masked}</small>
+                </div>
+              </div>
+            ) : (
+              <p className="github-help">
+                GitHub Personal Access Tokenを登録すると、GitHub上のリポジトリ情報を取得してダッシュボードに反映できます。
+              </p>
+            )}
+
+            <Field label="GitHub Personal Access Token">
+              <input
+                type="password"
+                placeholder="github_pat_..."
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+              />
+            </Field>
+
+            <div className="github-actions">
+              <button type="button" onClick={connectGithub}>
+                連携する
+              </button>
+
+              {github?.connected ? (
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={disconnectGithub}
+                >
+                  連携解除
+                </button>
+              ) : null}
+            </div>
+
+            {githubMessage ? (
+              <p className="github-message">{githubMessage}</p>
+            ) : null}
+
+            <div className="github-note">
+              <b>必要な権限</b>
+              <span>public_repo: 公開リポジトリ取得</span>
+              <span>repo: privateリポジトリも取得したい場合</span>
+            </div>
           </div>
         </section>
       </main>

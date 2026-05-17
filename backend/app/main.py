@@ -15,6 +15,13 @@ from .vscode_service import open_project_in_vscode
 from .project_detail_service import get_project_detail_summary
 from .worklog_service import get_worklog
 from .settings_service import get_settings, update_settings, reset_settings
+from .github_service import (
+    get_github_settings,
+    connect_github,
+    disconnect_github,
+    get_authenticated_user,
+    get_repositories,
+)
 
 
 Base.metadata.create_all(bind=engine)
@@ -295,3 +302,28 @@ def update_app_settings(settings: dict):
 @app.post("/api/settings/reset")
 def reset_app_settings():
     return reset_settings()
+
+@app.get("/api/github/status")
+def read_github_status():
+    return get_github_settings()
+
+
+@app.post("/api/github/connect")
+def connect_github_account(payload: dict):
+    token = payload.get("token", "")
+    return connect_github(token)
+
+
+@app.post("/api/github/disconnect")
+def disconnect_github_account():
+    return disconnect_github()
+
+
+@app.get("/api/github/user")
+def read_github_user():
+    return get_authenticated_user()
+
+
+@app.get("/api/github/repositories")
+def read_github_repositories():
+    return get_repositories()

@@ -236,7 +236,14 @@ export default function ProjectDetailPage() {
                 <div className="project-meta-line">
                   <span>★ 0</span>
                   <span>⑂ {gitStatus?.branch || "-"}</span>
-                  <span>◎ 最終更新: {timeAgo(gitStatus?.latest_commit_at || project.updated_at)}</span>
+                  <span>
+                    ◎ 最終更新: {timeAgo(
+                        gitStatus?.latest_commit_at ||
+                        project.github_pushed_at ||
+                        project.github_updated_at ||
+                        project.updated_at
+                    )}
+                  </span>
                   <span className="status-pill">{statusLabel(project.status)}</span>
                   <span className="priority-pill">{priorityLabel(project.priority)}</span>
                 </div>
@@ -342,18 +349,25 @@ export default function ProjectDetailPage() {
             <h2>アクティビティ</h2>
 
             <div className="activity-list">
-              {recentCommits.map((commit, index) => (
-                <div className="activity-item" key={commit.hash}>
-                  <i className={`activity-dot c${index % 4}`} />
-                  <span>
-                    <b>{timeAgo(commit.committed_at)}</b>
-                    <small>コミット <strong>{commit.short_hash}</strong></small>
-                    <em>{commit.message}</em>
-                  </span>
-                </div>
-              ))}
+              {(recentCommits.length > 0 ? recentCommits : commits.slice(0, 5)).map((commit, index) => {
+                const hash = commit.hash || commit.sha || "";
+                const date = commit.committed_at || commit.author_date;
 
-              {recentCommits.length === 0 && (
+                return (
+                    <div className="activity-item" key={hash || index}>
+                    <i className={`activity-dot c${index % 4}`} />
+                    <span>
+                        <b>{timeAgo(date)}</b>
+                        <small>
+                        コミット <strong>{commit.short_hash || hash.slice(0, 7)}</strong>
+                        </small>
+                        <em>{commit.message}</em>
+                    </span>
+                    </div>
+                );
+              })}
+
+              {recentCommits.length === 0 && commits.length === 0 && (
                 <p className="muted">コミット履歴を取得できませんでした。</p>
               )}
             </div>
@@ -434,7 +448,13 @@ export default function ProjectDetailPage() {
               <dd>{formatDate(project.created_at)}</dd>
 
               <dt>最終更新</dt>
-              <dd>{formatDate(project.updated_at)}</dd>
+              <dd>
+                {formatDate(
+                    project.github_pushed_at ||
+                    project.github_updated_at ||
+                    project.updated_at
+                )}
+              </dd>
 
               <dt>言語</dt>
               <dd>{techItems.slice(0, 3).map((item) => item.language).join(", ") || "-"}</dd>

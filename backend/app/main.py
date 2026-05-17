@@ -12,6 +12,7 @@ from .tech_service import analyze_tech_stack
 from .recommend_service import recommend_next_task
 from .inactivity_service import detect_inactivity
 from .vscode_service import open_project_in_vscode
+from .project_detail_service import get_project_detail_summary
 
 Base.metadata.create_all(bind=engine)
 
@@ -224,3 +225,14 @@ def open_project_vscode(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return open_project_in_vscode(db_project.local_path)
+
+@app.get("/api/projects/{project_id}/detail-summary")
+def read_project_detail_summary(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    todos = crud.get_todos(db, project_id)
+
+    return get_project_detail_summary(db_project.local_path, todos)

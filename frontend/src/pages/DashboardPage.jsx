@@ -188,11 +188,11 @@ export default function DashboardPage() {
         </Link>
 
         <nav className="topnav">
-          <span className="active">▦ ダッシュボード</span>
-          <span>□ プロジェクト</span>
-          <span>✦ TODO</span>
-          <span>▤ 作業ログ</span>
-          <span>⚙ 設定</span>
+          <Link className="active" to="/">▦ ダッシュボード</Link>
+          <Link to="/projects">□ プロジェクト</Link>
+          <Link to="/todos">✦ TODO</Link>
+          <Link to="/logs">▤ 作業ログ</Link>
+          <Link to="/settings">⚙ 設定</Link>
         </nav>
 
         <div className="sync-state">

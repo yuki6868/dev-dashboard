@@ -16,6 +16,12 @@ class Project(Base):
     priority = Column(String, default="medium")
     next_action = Column(Text, nullable=True)
 
+    github_updated_at = Column(String, nullable=True)
+    github_pushed_at = Column(String, nullable=True)
+    github_language = Column(String, nullable=True)
+    github_open_issues_count = Column(Integer, default=0)
+    github_stars = Column(Integer, default=0)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

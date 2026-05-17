@@ -26,6 +26,32 @@ from .github_service import (
 
 Base.metadata.create_all(bind=engine)
 
+def ensure_project_github_columns():
+    columns = {
+        "github_updated_at": "VARCHAR",
+        "github_pushed_at": "VARCHAR",
+        "github_language": "VARCHAR",
+        "github_open_issues_count": "INTEGER DEFAULT 0",
+        "github_stars": "INTEGER DEFAULT 0",
+    }
+
+    with engine.connect() as connection:
+        existing = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(projects)").fetchall()
+        }
+
+        for column_name, column_type in columns.items():
+            if column_name not in existing:
+                connection.exec_driver_sql(
+                    f"ALTER TABLE projects ADD COLUMN {column_name} {column_type}"
+                )
+
+        connection.commit()
+
+
+ensure_project_github_columns()
+
 app = FastAPI(title="Dev Dashboard API")
 
 app.add_middleware(
@@ -354,3 +380,49 @@ def add_github_repository_as_project(
     )
 
     return crud.create_project(db, project)
+
+@app.post("/api/github/sync-projects")
+def sync_github_projects(db: Session = Depends(get_db)):
+    result = get_repositories()
+
+    if not result.get("ok"):
+        return result
+
+    repos = result.get("repositories", [])
+    repos_by_url = {
+        repo.get("html_url"): repo
+        for repo in repos
+        if repo.get("html_url")
+    }
+
+    projects = crud.get_projects(db)
+    updated_projects = []
+
+    for project in projects:
+        if not project.github_url:
+            continue
+
+        repo = repos_by_url.get(project.github_url)
+
+        if repo is None:
+            continue
+
+        updated_project = crud.update_project_github_metadata(
+            db,
+            project.id,
+            {
+                "updated_at": repo.get("updated_at"),
+                "pushed_at": repo.get("pushed_at"),
+                "language": repo.get("language"),
+                "open_issues_count": repo.get("open_issues_count"),
+                "stargazers_count": repo.get("stargazers_count"),
+            },
+        )
+
+        if updated_project is not None:
+            updated_projects.append(updated_project)
+
+    return {
+        "ok": True,
+        "updated_count": len(updated_projects),
+    }

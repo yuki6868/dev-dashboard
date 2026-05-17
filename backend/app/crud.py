@@ -244,3 +244,24 @@ def get_todo_summary(db: Session):
         "high": high_count,
         "by_type": by_type,
     }
+
+def update_project_github_metadata(
+    db: Session,
+    project_id: int,
+    metadata: dict,
+):
+    db_project = get_project(db, project_id)
+
+    if db_project is None:
+        return None
+
+    db_project.github_updated_at = metadata.get("updated_at")
+    db_project.github_pushed_at = metadata.get("pushed_at")
+    db_project.github_language = metadata.get("language")
+    db_project.github_open_issues_count = metadata.get("open_issues_count") or 0
+    db_project.github_stars = metadata.get("stargazers_count") or 0
+
+    db.commit()
+    db.refresh(db_project)
+
+    return db_project

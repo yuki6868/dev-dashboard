@@ -40,6 +40,23 @@ function daysFrom(dateText) {
   return Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
 }
 
+function formatGitHubDate(value) {
+  if (!value) return "GitHub未取得";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "GitHub未取得";
+  }
+
+  return date.toLocaleString("ja-JP", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function projectIcon(name = "P") {
   return name.trim().slice(0, 2).toUpperCase();
 }
@@ -93,19 +110,21 @@ export default function DashboardPage() {
     fetchAll();
   }, []);
 
-  async function fetchAll() {
-    const [projectsRes, todosRes, inactivityRes, recommendationRes] = await Promise.allSettled([
-      api.get("/api/projects"),
-      api.get("/api/todos"),
-      api.get("/api/projects/inactivity"),
-      api.get("/api/recommend/next-task"),
-    ]);
+async function fetchAll() {
+  await api.post("/api/github/sync-projects").catch(() => null);
 
-    if (projectsRes.status === "fulfilled") setProjects(projectsRes.value.data || []);
-    if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
-    if (inactivityRes.status === "fulfilled") setInactivity(inactivityRes.value.data || []);
-    if (recommendationRes.status === "fulfilled") setRecommendation(recommendationRes.value.data || null);
-  }
+  const [projectsRes, todosRes, inactivityRes, recommendationRes] = await Promise.allSettled([
+    api.get("/api/projects"),
+    api.get("/api/todos"),
+    api.get("/api/projects/inactivity"),
+    api.get("/api/recommend/next-task"),
+  ]);
+
+  if (projectsRes.status === "fulfilled") setProjects(projectsRes.value.data || []);
+  if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
+  if (inactivityRes.status === "fulfilled") setInactivity(inactivityRes.value.data || []);
+  if (recommendationRes.status === "fulfilled") setRecommendation(recommendationRes.value.data || null);
+}
 
   const summary = useMemo(() => {
     const active = projects.filter((p) => p.status === "active").length;
@@ -210,14 +229,20 @@ export default function DashboardPage() {
 
           <div className="project-stack">
             {topProjects.map((project, index) => {
-              const days = daysFrom(project.last_commit_at || project.updated_at);
+              const latestDate = project.github_pushed_at || project.github_updated_at || project.last_commit_at || project.updated_at;
+              const days = daysFrom(latestDate);
               return (
                 <Link className={`project-row ${index === 0 ? "selected" : ""}`} key={project.id} to={`/projects/${project.id}`}>
                   <span className="project-avatar">{projectIcon(project.name)}</span>
                   <span className="project-main">
                     <b>{project.name}</b>
                     <small>{project.description || project.problem || "README / GitHub から状態を取得"}</small>
-                    <em>★ {project.stars || 0}　⑂ {project.branch || "main"}　◎ {project.commit_count || 0}</em>
+                    <em>
+                      ★ {project.github_stars || project.stars || 0}
+                      　⑂ {project.github_language || project.branch || "main"}
+                      　Issue {project.github_open_issues_count || 0}
+                    </em>
+                    <em>GitHub更新: {formatGitHubDate(project.github_pushed_at || project.github_updated_at)}</em>
                   </span>
                   <span className="project-side">
                     <i className={`status-chip ${project.status || "active"}`}>{statusText(project.status)}</i>

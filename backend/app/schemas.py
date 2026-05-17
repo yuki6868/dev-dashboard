@@ -7,6 +7,11 @@ class ProjectBase(BaseModel):
     name: str
     local_path: str
     github_url: Optional[str] = None
+    github_updated_at: Optional[str] = None
+    github_pushed_at: Optional[str] = None
+    github_language: Optional[str] = None
+    github_open_issues_count: int = 0
+    github_stars: int = 0
     description: Optional[str] = None
     status: str = "active"
     priority: str = "medium"
@@ -21,6 +26,11 @@ class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     local_path: Optional[str] = None
     github_url: Optional[str] = None
+    github_updated_at: Optional[str] = None
+    github_pushed_at: Optional[str] = None
+    github_language: Optional[str] = None
+    github_open_issues_count: Optional[int] = None
+    github_stars: Optional[int] = None
     description: Optional[str] = None
     status: Optional[str] = None
     priority: Optional[str] = None

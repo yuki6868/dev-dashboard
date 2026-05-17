@@ -320,3 +320,97 @@ def save_github_commits(
     db.commit()
 
     return inserted
+
+def get_todo_by_github_url(
+    db: Session,
+    project_id: int,
+    github_url: str,
+):
+    if not github_url:
+        return None
+
+    return (
+        db.query(models.Todo)
+        .filter(models.Todo.project_id == project_id)
+        .filter(models.Todo.description.contains(github_url))
+        .first()
+    )
+
+
+def save_github_issues_as_todos(
+    db: Session,
+    project_id: int,
+    issues: list,
+):
+    inserted = 0
+    updated = 0
+
+    for issue in issues:
+        html_url = issue.get("html_url")
+        title = issue.get("title") or "GitHub Issue"
+
+        if not html_url:
+            continue
+
+        labels = issue.get("labels") or []
+
+        todo_type = "Issue"
+        priority = "medium"
+
+        lower_labels = [str(label).lower() for label in labels]
+
+        if "bug" in lower_labels:
+            todo_type = "Bug"
+            priority = "high"
+        elif "enhancement" in lower_labels:
+            todo_type = "Improve"
+        elif "documentation" in lower_labels or "docs" in lower_labels:
+            todo_type = "Docs"
+        elif "todo" in lower_labels:
+            todo_type = "Todo"
+
+        description = "\n".join(
+            [
+                f"GitHub Issue: {html_url}",
+                f"Issue No: #{issue.get('number')}",
+                f"Labels: {', '.join(labels) if labels else '-'}",
+                "",
+                issue.get("body") or "",
+            ]
+        )
+
+        existing = get_todo_by_github_url(
+            db,
+            project_id,
+            html_url,
+        )
+
+        if existing is not None:
+            existing.title = title
+            existing.description = description
+            existing.todo_type = todo_type
+            existing.priority = priority
+            existing.status = "open"
+            existing.is_completed = False
+            updated += 1
+            continue
+
+        db_todo = models.Todo(
+            project_id=project_id,
+            title=title,
+            description=description,
+            todo_type=todo_type,
+            priority=priority,
+            status="open",
+            is_completed=False,
+        )
+
+        db.add(db_todo)
+        inserted += 1
+
+    db.commit()
+
+    return {
+        "inserted": inserted,
+        "updated": updated,
+    }

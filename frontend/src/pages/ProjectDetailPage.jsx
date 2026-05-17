@@ -87,6 +87,12 @@ export default function ProjectDetailPage() {
   async function fetchProjectDetail() {
     setLoading(true);
 
+    await Promise.allSettled([
+        api.post("/api/github/sync-projects"),
+        api.post("/api/github/sync-commits"),
+        api.post("/api/github/sync-issues"),
+    ]);
+
     const [
         projectRes,
         gitRes,
@@ -115,6 +121,8 @@ export default function ProjectDetailPage() {
     if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
     if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
     if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
+
+    await fetchCommits();
 
     setLoading(false);
   }

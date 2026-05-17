@@ -111,8 +111,11 @@ export default function DashboardPage() {
   }, []);
 
 async function fetchAll() {
-  await api.post("/api/github/sync-commits").catch(() => null);
-  await api.post("/api/github/sync-projects").catch(() => null);
+  await Promise.allSettled([
+    api.post("/api/github/sync-projects"),
+    api.post("/api/github/sync-commits"),
+    api.post("/api/github/sync-issues"),
+  ]);
 
   const [projectsRes, todosRes, inactivityRes, recommendationRes] = await Promise.allSettled([
     api.get("/api/projects"),

@@ -22,6 +22,7 @@ from .github_service import (
     get_authenticated_user,
     get_repositories,
     get_repository_commits,
+    get_repository_issues,
 )
 
 
@@ -467,6 +468,50 @@ def sync_github_commits(
         "inserted": total_inserted,
     }
 
+
+@app.post("/api/github/sync-issues")
+def sync_github_issues(
+    db: Session = Depends(get_db),
+):
+    projects = crud.get_projects(db)
+
+    total_inserted = 0
+    total_updated = 0
+    skipped = 0
+
+    for project in projects:
+        if not project.github_url:
+            continue
+
+        try:
+            parts = project.github_url.rstrip("/").split("/")
+            owner = parts[-2]
+            repo = parts[-1]
+        except Exception:
+            skipped += 1
+            continue
+
+        result = get_repository_issues(owner, repo)
+
+        if not result.get("ok"):
+            skipped += 1
+            continue
+
+        saved = crud.save_github_issues_as_todos(
+            db,
+            project.id,
+            result.get("issues", []),
+        )
+
+        total_inserted += saved["inserted"]
+        total_updated += saved["updated"]
+
+    return {
+        "ok": True,
+        "inserted": total_inserted,
+        "updated": total_updated,
+        "skipped": skipped,
+    }
 
 @app.get(
     "/api/projects/{project_id}/commits",

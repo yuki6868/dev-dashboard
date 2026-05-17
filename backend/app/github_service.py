@@ -242,41 +242,80 @@ def get_repositories():
     }
 
 def get_repository_commits(owner: str, repo: str):
-    token = load_github_token()
+    settings = get_settings()
+    token = settings.get("github", {}).get("token")
 
     if not token:
         return {
             "ok": False,
-            "error": "GitHub token not configured",
+            "error": "GitHubが未連携です。",
+            "commits": [],
         }
 
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-    }
+    result = _request_github(
+        f"/repos/{owner}/{repo}/commits?per_page=30",
+        token,
+    )
 
-    url = f"https://api.github.com/repos/{owner}/{repo}/commits"
-
-    try:
-        response = requests.get(
-            url,
-            headers=headers,
-            timeout=15,
-        )
-
-        if response.status_code != 200:
-            return {
-                "ok": False,
-                "error": f"GitHub API error: {response.status_code}",
-            }
-
-        return {
-            "ok": True,
-            "commits": response.json(),
-        }
-
-    except Exception as error:
+    if not result["ok"]:
         return {
             "ok": False,
-            "error": str(error),
+            "error": result.get("error"),
+            "commits": [],
         }
+
+    return {
+        "ok": True,
+        "commits": result["data"],
+    }
+
+
+def get_repository_issues(owner: str, repo: str):
+    settings = get_settings()
+    token = settings.get("github", {}).get("token")
+
+    if not token:
+        return {
+            "ok": False,
+            "error": "GitHubが未連携です。",
+            "issues": [],
+        }
+
+    result = _request_github(
+        f"/repos/{owner}/{repo}/issues?state=open&per_page=50",
+        token,
+    )
+
+    if not result["ok"]:
+        return {
+            "ok": False,
+            "error": result.get("error"),
+            "issues": [],
+        }
+
+    issues = []
+
+    for issue in result["data"]:
+        if issue.get("pull_request"):
+            continue
+
+        labels = issue.get("labels") or []
+        label_names = [label.get("name") for label in labels if label.get("name")]
+
+        issues.append(
+            {
+                "number": issue.get("number"),
+                "title": issue.get("title"),
+                "body": issue.get("body"),
+                "html_url": issue.get("html_url"),
+                "state": issue.get("state"),
+                "labels": label_names,
+                "created_at": issue.get("created_at"),
+                "updated_at": issue.get("updated_at"),
+            }
+        )
+
+    return {
+        "ok": True,
+        "issues": issues,
+    }

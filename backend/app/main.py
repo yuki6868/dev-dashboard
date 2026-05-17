@@ -5,7 +5,7 @@ from typing import List
 from .database import SessionLocal, Base, engine
 from . import crud, schemas, models
 from .git_service import get_git_status
-from .git_service import get_git_status
+from .readme_service import parse_dashboard_metadata
 
 Base.metadata.create_all(bind=engine)
 
@@ -107,3 +107,12 @@ def read_latest_git_snapshot(project_id: int, db: Session = Depends(get_db)):
         return None
 
     return snapshot
+
+@app.get("/api/projects/{project_id}/readme-dashboard")
+def read_project_readme_dashboard(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return parse_dashboard_metadata(db_project.local_path)

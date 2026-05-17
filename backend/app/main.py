@@ -7,6 +7,7 @@ from . import crud, schemas, models
 from .git_service import get_git_status
 from .readme_service import parse_dashboard_metadata
 from .readme_quality_service import check_readme_quality
+from .tech_service import analyze_tech_stack
 
 Base.metadata.create_all(bind=engine)
 
@@ -126,3 +127,12 @@ def read_project_readme_quality(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return check_readme_quality(db_project.local_path)
+
+@app.get("/api/projects/{project_id}/tech-stack")
+def read_project_tech_stack(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return analyze_tech_stack(db_project.local_path)

@@ -5,6 +5,7 @@ from typing import List
 from .database import SessionLocal, Base, engine
 from . import crud, schemas, models
 from .git_service import get_git_status
+from .git_service import get_git_status
 
 Base.metadata.create_all(bind=engine)
 
@@ -75,3 +76,34 @@ def read_project_git_status(project_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Project not found")
 
     return get_git_status(db_project.local_path)
+
+@app.post("/api/projects/{project_id}/refresh-git")
+def refresh_project_git_status(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    git_status = get_git_status(db_project.local_path)
+    snapshot = crud.create_git_snapshot(db, project_id, git_status)
+
+    return {
+        "project_id": project_id,
+        "git_status": git_status,
+        "snapshot_id": snapshot.id,
+    }
+
+
+@app.get("/api/projects/{project_id}/git-snapshot/latest")
+def read_latest_git_snapshot(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    snapshot = crud.get_latest_git_snapshot(db, project_id)
+
+    if snapshot is None:
+        return None
+
+    return snapshot

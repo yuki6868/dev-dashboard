@@ -1,29 +1,4 @@
-import subprocess
-from pathlib import Path
-
-
-def run_git_command(local_path: str, args: list[str]) -> tuple[bool, str]:
-    path = Path(local_path)
-
-    if not path.exists():
-        return False, f"Path does not exist: {local_path}"
-
-    try:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=local_path,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-
-        if result.returncode != 0:
-            return False, result.stderr.strip()
-
-        return True, result.stdout.strip()
-
-    except Exception as e:
-        return False, str(e)
+from .error_service import run_git_command, validate_git_repo
 
 
 def get_git_status(local_path: str) -> dict:
@@ -38,6 +13,11 @@ def get_git_status(local_path: str) -> dict:
         "behind": 0,
         "error_message": None,
     }
+
+    repo_error = validate_git_repo(local_path)
+    if repo_error:
+        status["error_message"] = repo_error["message"]
+        return status
 
     ok, output = run_git_command(local_path, ["rev-parse", "--is-inside-work-tree"])
     if not ok or output != "true":
@@ -63,6 +43,8 @@ def get_git_status(local_path: str) -> dict:
         lines = [line for line in output.splitlines() if line.strip()]
         status["changed_files_count"] = len(lines)
         status["has_uncommitted_changes"] = len(lines) > 0
+    else:
+        status["error_message"] = output
 
     ok, output = run_git_command(
         local_path,

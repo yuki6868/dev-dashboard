@@ -1,30 +1,10 @@
 import subprocess
 from pathlib import Path
 from datetime import datetime
-
+from .error_service import run_git_command
 
 def run_git(local_path: str, args: list[str]) -> tuple[bool, str]:
-    path = Path(local_path)
-
-    if not path.exists():
-        return False, f"Path does not exist: {local_path}"
-
-    try:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=local_path,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-
-        if result.returncode != 0:
-            return False, result.stderr.strip()
-
-        return True, result.stdout.strip()
-
-    except Exception as e:
-        return False, str(e)
+    return run_git_command(local_path, args)
 
 
 def get_recent_commits(local_path: str, limit: int = 8) -> list[dict]:

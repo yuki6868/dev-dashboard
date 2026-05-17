@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from .error_service import project_error, validate_local_path
 
 DASHBOARD_KEYS = {
     "status": "status",
@@ -56,18 +56,32 @@ def parse_dashboard_metadata(local_path: str) -> dict:
         "error_message": None,
     }
 
+    path_error = validate_local_path(local_path)
+    if path_error:
+        result["error_message"] = path_error["message"]
+        return result
+
     readme_path = find_readme_path(local_path)
 
     if readme_path is None:
-        result["error_message"] = "README not found"
+        message = "README not found"
+        project_error("README_NOT_FOUND", message, local_path, "skip")
+        result["error_message"] = message
         return result
 
     try:
         text = readme_path.read_text(encoding="utf-8")
     except UnicodeDecodeError:
         text = readme_path.read_text(encoding="utf-8", errors="ignore")
+    except PermissionError as e:
+        message = f"Permission denied: {e}"
+        project_error("PERMISSION_ERROR", message, local_path, "skip")
+        result["error_message"] = message
+        return result
     except Exception as e:
-        result["error_message"] = str(e)
+        message = str(e)
+        project_error("README_READ_ERROR", message, local_path, "skip")
+        result["error_message"] = message
         return result
 
     section = extract_dashboard_section(text)

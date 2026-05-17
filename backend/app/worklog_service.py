@@ -6,6 +6,7 @@ import subprocess
 from sqlalchemy.orm import Session
 
 from . import models
+from .error_service import run_git_command
 
 
 def parse_date(value):
@@ -24,26 +25,7 @@ def parse_date(value):
 
 
 def run_git(local_path: str, args: list[str]):
-    path = Path(local_path)
-
-    if not path.exists():
-        return False, ""
-
-    try:
-        result = subprocess.run(
-            ["git", *args],
-            cwd=local_path,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-
-        if result.returncode != 0:
-            return False, result.stderr.strip()
-
-        return True, result.stdout.strip()
-    except Exception:
-        return False, ""
+    return run_git_command(local_path, args)
 
 
 def get_git_commits(project, target_date: date):

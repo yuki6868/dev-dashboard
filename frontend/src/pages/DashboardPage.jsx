@@ -473,7 +473,7 @@ async function fetchAll({ forceSync = false } = {}) {
           </div>
         </section>
 
-        <section className="panel log-card">
+        {/* <section className="panel log-card">
           <h2>今週の作業ログ</h2>
           <div className="log-list">
             <b>今日の作業</b>
@@ -492,35 +492,52 @@ async function fetchAll({ forceSync = false } = {}) {
             <p>コミット: {worklog?.summary?.commit_count || 0}件</p>
             <p>完了TODO: {worklog?.summary?.completed_todo_count || 0}件</p>
           </div>
-        </section>
+        </section> */}
 
-        <section className="panel tech-card">
-          <h2>技術スタック</h2>
-          <div className="tech-body">
-            <ResponsiveContainer width="42%" height="100%">
-              <PieChart>
-                <Pie data={techRows} dataKey="value" innerRadius={42} outerRadius={70} paddingAngle={4}>
-                  {techRows.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="tech-legend">
-              {techRows.map((row, index) => (
-                <div key={row.name}><i style={{ background: COLORS[index % COLORS.length] }} />{row.name}<b>{row.value}%</b></div>
+        <div className="bottom-left-stack">
+          <section className="panel tech-card">
+            <h2>技術スタック</h2>
+            <div className="tech-body">
+              <ResponsiveContainer width="72%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={techRows}
+                    dataKey="value"
+                    innerRadius={78}
+                    outerRadius={142}
+                    paddingAngle={3}
+                  >
+                    {techRows.map((_, index) => (
+                      <Cell
+                        key={index}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="tech-legend">
+                {techRows.map((row, index) => (
+                  <div key={row.name}>
+                    <i style={{ background: COLORS[index % COLORS.length] }} />
+                    {row.name}
+                    <b>{row.value}%</b>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="panel tags-card">
+            <h2>よく使う技術タグ</h2>
+            <div className="tag-cloud">
+              {["Python", "FastAPI", "React", "SQLite", "Docker", "Ollama", "Chrome拡張", "JavaScript", "TypeScript", "Tailwind CSS"].map((tag) => (
+                <span key={tag}>{tag}</span>
               ))}
             </div>
-          </div>
-        </section>
-
-        <section className="panel tags-card">
-          <h2>よく使う技術タグ</h2>
-          <div className="tag-cloud">
-            {["Python", "FastAPI", "React", "SQLite", "Docker", "Ollama", "Chrome拡張", "JavaScript", "TypeScript", "Tailwind CSS"].map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-        </section>
+          </section>
+        </div>
 
         <section className="panel readme-card">
           <h2>README品質チェック</h2>
@@ -549,6 +566,28 @@ async function fetchAll({ forceSync = false } = {}) {
         </section>
 
         <div className="right-bottom-stack">
+
+        <section className="panel log-card">
+          <h2>今週の作業ログ</h2>
+          <div className="log-list">
+            <b>今日の作業</b>
+
+            {(worklog?.entries || []).slice(0, 5).map((entry, index) => (
+              <p key={`${entry.type}-${entry.project_id}-${entry.time}-${index}`}>
+                {entry.project_name} / {entry.title}
+              </p>
+            ))}
+
+            {(!worklog?.entries || worklog.entries.length === 0) && (
+              <p>今日の作業ログはまだありません</p>
+            )}
+
+            <b>集計</b>
+            <p>コミット: {worklog?.summary?.commit_count || 0}件</p>
+            <p>完了TODO: {worklog?.summary?.completed_todo_count || 0}件</p>
+          </div>
+        </section>
+
           <section className="panel abandoned-card">
             <h2>放置プロジェクト検知</h2>
             {(inactivity[0] || projects[projects.length - 1]) ? (

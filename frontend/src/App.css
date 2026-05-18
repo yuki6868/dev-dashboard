@@ -137,17 +137,24 @@ a {
   cursor: pointer;
 }
 
-.wide-board {
+/* .wide-board {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 260px 1.9fr 300px 300px 310px;
+  grid-template-columns: 340px 1.55fr 300px 300px 310px;
   grid-template-rows:
     250px
     285px
     1fr;
   gap: 8px;
   padding: 8px;
+} */
+
+.commit-card,
+.todo-rate,
+.progress-card {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .panel {
@@ -195,9 +202,34 @@ a {
   white-space: nowrap;
 }
 
+.wide-board {
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 50px);
+  display: grid;
+
+  grid-template-columns:
+    430px
+    1.15fr
+    300px
+    300px
+    310px;
+
+  /* 画面下の空白を消す。上段も少し長め */
+  grid-template-rows:
+    minmax(230px, 1.1fr)
+    minmax(330px, 1.55fr)
+    minmax(190px, 0.95fr);
+
+  gap: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+
 .project-list {
   grid-column: 1;
   grid-row: 1 / span 2;
+  overflow: hidden;
 }
 
 .today-card {
@@ -221,6 +253,8 @@ a {
 .commit-card {
   grid-column: 2;
   grid-row: 2;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .todo-rate {
@@ -228,28 +262,40 @@ a {
   grid-row: 2;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   overflow: hidden;
 }
 
 .progress-card {
   grid-column: 4;
   grid-row: 2;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.log-card {
-  grid-column: 5;
-  grid-row: 2;
-  overflow: auto;
-}
-
-.tech-card {
-  grid-column: 1;
+.bottom-left-stack {
+  grid-column: 1 / span 2;
   grid-row: 3;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.tags-card {
-  grid-column: 2;
-  grid-row: 3;
+.bottom-left-stack .tech-card,
+.bottom-left-stack .tags-card {
+  grid-column: auto;
+  grid-row: auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bottom-left-stack .tags-card {
   overflow: auto;
 }
 
@@ -259,44 +305,33 @@ a {
   overflow: auto;
 }
 
+/* 右端下側：作業ログ → 放置検知 → メモ を縦に積む */
 .right-bottom-stack {
   grid-column: 5;
-  grid-row: 3;
+  grid-row: 2 / span 2;
 
   display: grid;
-  grid-template-rows: 1fr 0.7fr;
+  grid-template-rows:
+    1fr
+    1fr
+    0.72fr;
   gap: 8px;
 
   min-height: 0;
   overflow: hidden;
 }
 
-.log-card {
-  grid-column: 5;
-  grid-row: 2;
-  overflow: auto;
-  max-height: 285px;
-}
-
+.right-bottom-stack .log-card,
 .right-bottom-stack .abandoned-card,
 .right-bottom-stack .memo-card {
   grid-column: auto;
   grid-row: auto;
 
-  height: auto;
+  min-width: 0;
   min-height: 0;
   max-height: none;
 
-  margin: 0;
   overflow: auto;
-}
-
-.right-bottom-stack .abandoned-card {
-  align-self: stretch;
-}
-
-.right-bottom-stack .memo-card {
-  align-self: stretch;
 }
 
 .project-stack {
@@ -657,37 +692,63 @@ a {
   text-align: center;
 }
 
-.tech-body {
+/* .tech-body {
   height: calc(100% - 26px);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
+  min-width: 0;
+} */
+
+.tech-body {
+  height: calc(100% - 26px);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 28px;
+
+  padding: 12px 18px;
+
+  min-width: 0;
+}
+
+.tech-body .recharts-responsive-container {
+  flex: 0 0 68%;
+  min-width: 420px;
 }
 
 .tech-legend {
   flex: 1;
+  min-width: 220px;
+
   display: grid;
-  gap: 8px;
+  gap: 14px;
 }
 
 .tech-legend div {
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) 42px;
+  grid-template-columns: 14px minmax(0, 1fr) 56px;
+
   align-items: center;
-  gap: 7px;
-  color: #cbd7e8;
-  font-size: 11px;
+  gap: 10px;
+
+  color: #d7e3f4;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .tech-legend i {
-  width: 9px;
-  height: 9px;
-  border-radius: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
 }
 
 .tech-legend b {
   text-align: right;
-  color: #dbeafe;
+  color: #ffffff;
+  font-size: 17px;
 }
 
 .tag-cloud {

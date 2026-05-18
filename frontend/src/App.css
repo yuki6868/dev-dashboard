@@ -226,6 +226,9 @@ a {
 .todo-rate {
   grid-column: 3;
   grid-row: 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .progress-card {
@@ -563,6 +566,27 @@ a {
   margin-top: 6px;
   color: #38bdf8;
   font-size: 22px;
+}
+
+.todo-rate-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-top: 14px;
+}
+
+.todo-rate-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.todo-rate-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+}
+
+.todo-rate-scroll .bar-list {
+  margin-top: 0;
 }
 
 .bar-list {

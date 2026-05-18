@@ -228,11 +228,58 @@ async function fetchAll({ forceSync = false } = {}) {
     return buildTechRows(projectsWithTech);
   }, [projects, projectTechStacks]);
 
-  const progressRows = topProjects.map((project) => ({
-    id: project.id,
-    name: project.name,
-    progress: Math.min(95, Math.max(12, Number(project.progress || project.completion || project.priority * 14 || 35))),
-  }));
+  const progressRows = useMemo(() => {
+    return topProjects.map((project) => {
+      const projectTodos = todos.filter(
+        (todo) => Number(todo.project_id) === Number(project.id)
+      );
+
+      const totalTodos = projectTodos.length;
+
+      const completedTodos = projectTodos.filter((todo) => {
+        return (
+          todo.is_completed ||
+          todo.status === "completed"
+        );
+      }).length;
+
+      const inProgressTodos = projectTodos.filter((todo) => {
+        return todo.status === "in_progress";
+      }).length;
+
+      // TODO消化率
+      const completionRate =
+        totalTodos > 0
+          ? Math.round((completedTodos / totalTodos) * 100)
+          : 0;
+
+      // プロジェクト進捗率
+      // completed=100%
+      // in_progress=50%
+      // open=0%
+      const weightedProgress =
+        totalTodos > 0
+          ? Math.round(
+              (
+                (
+                  completedTodos +
+                  inProgressTodos * 0.5
+                ) /
+                totalTodos
+              ) * 100
+            )
+          : 0;
+
+      return {
+        id: project.id,
+        name: project.name,
+        completionRate,
+        progress: weightedProgress,
+        totalTodos,
+        completedTodos,
+      };
+    });
+  }, [topProjects, todos]);
 
   const readmeColumns = [
     { key: "overview", label: "概要" },
@@ -383,14 +430,24 @@ async function fetchAll({ forceSync = false } = {}) {
 
         <section className="panel todo-rate">
           <h2>TODO消化率</h2>
-          <div className="bar-list">
-            {progressRows.map((row, index) => (
-              <div key={row.id || row.name}>
-                <span>{row.name}</span>
-                <b><i style={{ width: `${row.progress}%`, background: COLORS[index % COLORS.length] }} /></b>
-                <em>{row.progress}%</em>
-              </div>
-            ))}
+
+          <div className="todo-rate-scroll">
+            <div className="bar-list">
+              {progressRows.map((row, index) => (
+                <div key={row.id || row.name}>
+                  <span>{row.name}</span>
+                  <b>
+                    <i
+                      style={{
+                        width: `${row.completionRate}%`,
+                        background: COLORS[index % COLORS.length],
+                      }}
+                    />
+                  </b>
+                  <em>{row.completionRate}%</em>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

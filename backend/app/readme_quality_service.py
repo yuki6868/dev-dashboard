@@ -65,12 +65,53 @@ def find_readme_path(local_path: str) -> Path | None:
     if not base.exists() or not base.is_dir():
         return None
 
-    for name in ["README.md", "readme.md", "README.txt", "readme.txt"]:
-        path = base / name
+    direct_candidates = [
+        base / "README.md",
+        base / "readme.md",
+        base / "README.txt",
+        base / "readme.txt",
+    ]
+
+    for path in direct_candidates:
         if path.exists() and path.is_file():
             return path
 
-    return None
+    nested_candidates = []
+
+    try:
+        for path in base.rglob("*"):
+            if not path.is_file():
+                continue
+
+            name = path.name.lower()
+
+            if name not in {
+                "readme.md",
+                "readme.txt",
+            }:
+                continue
+
+            # node_modules や .git は除外
+            parts = {part.lower() for part in path.parts}
+
+            if ".git" in parts:
+                continue
+
+            if "node_modules" in parts:
+                continue
+
+            nested_candidates.append(path)
+
+    except Exception:
+        return None
+
+    if not nested_candidates:
+        return None
+
+    # 一番浅いREADMEを優先
+    nested_candidates.sort(key=lambda p: len(p.parts))
+
+    return nested_candidates[0]
 
 
 def check_readme_quality(local_path: str) -> dict:

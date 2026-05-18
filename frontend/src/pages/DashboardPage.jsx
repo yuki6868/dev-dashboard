@@ -234,17 +234,28 @@ async function fetchAll({ forceSync = false } = {}) {
     progress: Math.min(95, Math.max(12, Number(project.progress || project.completion || project.priority * 14 || 35))),
   }));
 
-  const readmeRows = visibleProjects.map((project, index) => ({
-    id: project.id,
-    name: project.name,
-    checks: [
-      Boolean(project.description || index !== 2),
-      Boolean(project.installation || index !== 1),
-      Boolean(project.usage || index !== 2),
-      Boolean(project.screenshot || index === 0),
-      Boolean(project.license || index !== 2),
-    ],
-  }));
+  const readmeColumns = [
+    { key: "overview", label: "概要" },
+    { key: "usage", label: "使い方" },
+    { key: "installation", label: "Install" },
+    { key: "screenshots", label: "画像" },
+    { key: "license", label: "License" },
+  ];
+
+  const readmeRows = visibleProjects.map((project) => {
+    const checks = project.readme_quality?.checks || [];
+
+    return {
+      id: project.id,
+      name: project.name,
+      percentage: project.readme_quality?.percentage ?? 0,
+      errorMessage: project.readme_quality?.error_message,
+      checks: readmeColumns.map((column) => {
+        const check = checks.find((item) => item.key === column.key);
+        return Boolean(check?.passed);
+      }),
+    };
+  });
 
   return (
     <div className="devos-shell">
@@ -448,13 +459,22 @@ async function fetchAll({ forceSync = false } = {}) {
           <h2>README品質チェック</h2>
           <table>
             <thead>
-              <tr><th>Project</th><th>概要</th><th>使い方</th><th>Install</th><th>画像</th><th>License</th></tr>
+              <tr>
+                <th>Project</th>
+                <th>品質</th>
+                {readmeColumns.map((column) => (
+                  <th key={column.key}>{column.label}</th>
+                ))}
+              </tr>
             </thead>
             <tbody>
               {readmeRows.map((row) => (
                 <tr key={row.id || row.name}>
                   <td>{row.name}</td>
-                  {row.checks.map((ok, index) => <td key={index}>{ok ? "✓" : "×"}</td>)}
+                  <td>{row.errorMessage ? "READMEなし" : `${row.percentage}%`}</td>
+                  {row.checks.map((ok, index) => (
+                    <td key={index}>{ok ? "✓" : "×"}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>

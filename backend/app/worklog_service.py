@@ -13,11 +13,11 @@ def parse_date(value):
     if value is None:
         return None
 
+
     if isinstance(value, datetime):
         return value
 
     text = str(value).replace("Z", "+00:00")
-
     try:
         return datetime.fromisoformat(text)
     except ValueError:

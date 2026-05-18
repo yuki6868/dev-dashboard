@@ -463,13 +463,23 @@ async function fetchAll({ forceSync = false } = {}) {
 
         <section className="panel progress-card">
           <h2>プロジェクト進捗率</h2>
-          <div className="ring-grid">
-            {progressRows.slice(0, 4).map((row, index) => (
-              <div className="ring" style={{ "--value": `${row.progress}%`, "--ring": COLORS[index % COLORS.length] }} key={row.id || row.name}>
-                <b>{row.progress}%</b>
-                <small>{row.name}</small>
-              </div>
-            ))}
+
+          <div className="progress-scroll">
+            <div className="ring-grid">
+              {progressRows.map((row, index) => (
+                <div
+                  className="ring"
+                  style={{
+                    "--value": `${row.progress}%`,
+                    "--ring": COLORS[index % COLORS.length],
+                  }}
+                  key={row.id || row.name}
+                >
+                  <b>{row.progress}%</b>
+                  <small>{row.name}</small>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

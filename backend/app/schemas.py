@@ -37,8 +37,21 @@ class ProjectUpdate(BaseModel):
     next_action: Optional[str] = None
 
 
-class ProjectResponse(ProjectBase):
+class ProjectResponse(BaseModel):
     id: int
+    name: str
+    description: Optional[str] = None
+    local_path: str
+    github_url: Optional[str] = None
+    github_updated_at: Optional[str] = None
+    github_pushed_at: Optional[str] = None
+    github_language: Optional[str] = None
+    github_open_issues_count: int = 0
+    github_stars: int = 0
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    next_action: Optional[str] = None
+    tech_stack: list[str] = []
     created_at: datetime
     updated_at: datetime
 

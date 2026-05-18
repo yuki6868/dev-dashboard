@@ -89,7 +89,37 @@ def select_system_folder(payload: FolderSelectRequest):
 
 @app.get("/api/projects", response_model=List[schemas.ProjectResponse])
 def read_projects(db: Session = Depends(get_db)):
-    return crud.get_projects(db)
+    projects = crud.get_projects(db)
+
+    result = []
+
+    for project in projects:
+        tech_result = analyze_tech_stack(project.local_path)
+        tech_stack = [
+            item["language"]
+            for item in tech_result.get("items", [])[:5]
+        ]
+
+        result.append({
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "local_path": project.local_path,
+            "github_url": project.github_url,
+            "github_updated_at": project.github_updated_at,
+            "github_pushed_at": project.github_pushed_at,
+            "github_language": project.github_language,
+            "github_open_issues_count": project.github_open_issues_count or 0,
+            "github_stars": project.github_stars or 0,
+            "status": project.status,
+            "priority": project.priority,
+            "next_action": project.next_action,
+            "tech_stack": tech_stack,
+            "created_at": project.created_at,
+            "updated_at": project.updated_at,
+        })
+
+    return result
 
 
 @app.get("/api/projects/inactivity")

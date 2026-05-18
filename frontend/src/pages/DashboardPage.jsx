@@ -106,6 +106,7 @@ export default function DashboardPage() {
   const [inactivity, setInactivity] = useState([]);
   const [recommendation, setRecommendation] = useState(null);
   const [worklog, setWorklog] = useState(null);
+  const [projectTechStacks, setProjectTechStacks] = useState({});
 
   useEffect(() => {
     fetchAll();
@@ -134,7 +135,28 @@ async function fetchAll({ forceSync = false } = {}) {
   if (worklogRes.status === "fulfilled") {
     setWorklog(worklogRes.value.data || null);
   }
-  if (projectsRes.status === "fulfilled") setProjects(projectsRes.value.data || []);
+  if (projectsRes.status === "fulfilled") {
+    const projectList = projectsRes.value.data || [];
+    setProjects(projectList);
+
+    const techResults = await Promise.allSettled(
+      projectList.map((project) =>
+        cachedGet(`/api/projects/${project.id}/tech-stack`, 10 * 60 * 1000)
+          .then((res) => [project.id, res.data])
+      )
+    );
+
+    const nextTechStacks = {};
+
+    techResults.forEach((result) => {
+      if (result.status !== "fulfilled") return;
+
+      const [projectId, data] = result.value;
+      nextTechStacks[projectId] = data?.items || [];
+    });
+
+    setProjectTechStacks(nextTechStacks);
+  }
   if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
   if (inactivityRes.status === "fulfilled") setInactivity(inactivityRes.value.data || []);
   if (recommendationRes.status === "fulfilled") {
@@ -197,7 +219,14 @@ async function fetchAll({ forceSync = false } = {}) {
     }));
   }, [worklog]);
 
-  const techRows = useMemo(() => buildTechRows(projects), [projects]);
+  const techRows = useMemo(() => {
+    const projectsWithTech = projects.map((project) => ({
+      ...project,
+      tech_stack: projectTechStacks[project.id] || [],
+    }));
+
+    return buildTechRows(projectsWithTech);
+  }, [projects, projectTechStacks]);
 
   const progressRows = topProjects.map((project) => ({
     id: project.id,

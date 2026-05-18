@@ -158,6 +158,18 @@ export default function ProjectListPage() {
                   <em>
                     GitHub: {project.github_url ? "連携あり" : "未設定"}
                   </em>
+                  <div className="project-tech-chips">
+                    {(project.tech_stack?.length ? project.tech_stack : [project.github_language])
+                        .filter(Boolean)
+                        .slice(0, 4)
+                        .map((tech) => (
+                        <span key={tech}>{tech}</span>
+                        ))}
+
+                    {!project.tech_stack?.length && !project.github_language ? (
+                        <span className="muted">技術スタック未検出</span>
+                    ) : null}
+                  </div>
                 </span>
 
                 <i className={`status-chip ${project.status || "active"}`}>

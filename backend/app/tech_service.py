@@ -75,13 +75,27 @@ def count_lines(path: Path) -> int:
 
 
 def analyze_tech_stack(local_path: str) -> dict:
-    base = Path(local_path)
+    if not local_path or not local_path.strip():
+        return {
+            "items": [],
+            "total_lines": 0,
+            "error_message": "local_path is empty",
+        }
+
+    base = Path(local_path).expanduser()
 
     if not base.exists():
         return {
             "items": [],
             "total_lines": 0,
             "error_message": f"Path does not exist: {local_path}",
+        }
+
+    if not base.is_dir():
+        return {
+            "items": [],
+            "total_lines": 0,
+            "error_message": f"Path is not a directory: {local_path}",
         }
 
     stats = {}

@@ -14,7 +14,16 @@ import {
 
 import api, { cachedGet, clearApiCache } from "../services/api";
 
-const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"];
+const ACCENT_PALETTES = {
+  blue: ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"],
+  purple: ["#8b5cf6", "#06b6d4", "#f59e0b", "#ef4444", "#22c55e", "#3b82f6"],
+  green: ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"],
+  orange: ["#f97316", "#3b82f6", "#22c55e", "#ef4444", "#8b5cf6", "#06b6d4"],
+};
+
+function getAccentColors(settings) {
+  return ACCENT_PALETTES[settings?.appearance?.accent_color || "blue"] || ACCENT_PALETTES.blue;
+}
 const STATUS_LABEL = {
   active: "開発中",
   paused: "停止中",
@@ -100,7 +109,8 @@ function buildTechRows(projects) {
     .slice(0, 6);
 }
 
-export default function DashboardPage() {
+export default function DashboardPage({ settings }) {
+  const COLORS = getAccentColors(settings);
   const [projects, setProjects] = useState([]);
   const [todos, setTodos] = useState([]);
   const [inactivity, setInactivity] = useState([]);
@@ -422,8 +432,8 @@ async function fetchAll({ forceSync = false } = {}) {
               <XAxis dataKey="day" stroke="#93a4bd" tickLine={false} fontSize={11} />
               <YAxis stroke="#93a4bd" tickLine={false} fontSize={11} />
               <Tooltip cursor={{ fill: "rgba(255,255,255,.05)" }} />
-              <Bar dataKey="commit" radius={[6, 6, 0, 0]} fill="#3b82f6" />
-              <Bar dataKey="todo" radius={[6, 6, 0, 0]} fill="#22c55e" />
+              <Bar dataKey="commit" radius={[6, 6, 0, 0]} fill={COLORS[0]} />
+              <Bar dataKey="todo" radius={[6, 6, 0, 0]} fill={COLORS[1]} />
             </BarChart>
           </ResponsiveContainer>
         </section>

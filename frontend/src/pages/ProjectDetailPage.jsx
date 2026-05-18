@@ -10,7 +10,16 @@ import {
 
 import api, { cachedGet, clearApiCache } from "../services/api";
 
-const COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#ef4444"];
+const ACCENT_PALETTES = {
+  blue: ["#3b82f6", "#22c55e", "#f59e0b", "#8b5cf6", "#ef4444"],
+  purple: ["#8b5cf6", "#06b6d4", "#f59e0b", "#22c55e", "#ef4444"],
+  green: ["#22c55e", "#3b82f6", "#f59e0b", "#8b5cf6", "#ef4444"],
+  orange: ["#f97316", "#3b82f6", "#22c55e", "#8b5cf6", "#ef4444"],
+};
+
+function getAccentColors(settings) {
+  return ACCENT_PALETTES[settings?.appearance?.accent_color || "blue"] || ACCENT_PALETTES.blue;
+}
 
 function shortName(name = "P") {
   return name.trim().slice(0, 2).toUpperCase();
@@ -46,6 +55,20 @@ function timeAgo(dateText) {
   return `${days}日前`;
 }
 
+function commitTypeClass(message = "") {
+  const text = String(message).trim().toLowerCase();
+
+  if (/^(feat|feature)(\(.+\))?:/.test(text)) return "feat";
+  if (/^fix(\(.+\))?:/.test(text)) return "fix";
+  if (/^refactor(\(.+\))?:/.test(text)) return "refactor";
+  if (/^style(\(.+\))?:/.test(text)) return "style";
+  if (/^docs(\(.+\))?:/.test(text)) return "docs";
+  if (/^test(\(.+\))?:/.test(text)) return "test";
+  if (/^(chore|build|ci|perf)(\(.+\))?:/.test(text)) return "chore";
+
+  return "other";
+}
+
 function statusLabel(status) {
   if (status === "active") return "開発中";
   if (status === "paused") return "停止中";
@@ -64,7 +87,8 @@ function normalizeTechItems(techStack) {
   return techStack?.items || [];
 }
 
-export default function ProjectDetailPage() {
+export default function ProjectDetailPage({ settings }) {
+  const COLORS = getAccentColors(settings);
   const { projectId } = useParams();
 
   const [project, setProject] = useState(null);
@@ -506,7 +530,7 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
                     className="activity-item"
                     key={`${commit.hash || commit.sha || "commit"}-${index}`}
                 >
-                    <i className={`activity-dot c${index % 4}`} />
+                    <i className={`activity-dot ${commitTypeClass(commit.message)}`} />
                     <span>
                     <b>{timeAgo(commit.committed_at)}</b>
                     <small>

@@ -1135,6 +1135,46 @@ td:not(:first-child) {
   box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
 }
 
+.activity-dot.feat {
+  background: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.16);
+}
+
+.activity-dot.fix {
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.16);
+}
+
+.activity-dot.refactor {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.16);
+}
+
+.activity-dot.style {
+  background: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+}
+
+.activity-dot.docs {
+  background: #06b6d4;
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.16);
+}
+
+.activity-dot.test {
+  background: #f59e0b;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.16);
+}
+
+.activity-dot.chore {
+  background: #64748b;
+  box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.16);
+}
+
+.activity-dot.other {
+  background: var(--accent, #3b82f6);
+  box-shadow: 0 0 0 4px var(--accent-soft, rgba(59, 130, 246, 0.16));
+}
+
 .activity-item b,
 .activity-item small,
 .activity-item em {
@@ -2697,4 +2737,836 @@ td:not(:first-child) {
 
 .project-readme-quality small {
   color: #64748b;
+}
+
+.settings-error {
+  margin: 10px 0 0;
+  color: #fecaca;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* =========================
+   Light Theme
+========================= */
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  background: #eef4fb;
+  color: #172033;
+}
+
+:root[data-theme="light"] body,
+:root[data-theme="light"] #root {
+  background: #eef4fb;
+  color: #172033;
+}
+
+:root[data-theme="light"] .devos-shell,
+:root[data-theme="light"] .project-detail-shell,
+:root[data-theme="light"] .todo-shell,
+:root[data-theme="light"] .worklog-shell,
+:root[data-theme="light"] .settings-shell {
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 24%),
+    radial-gradient(circle at top left, rgba(59, 130, 246, 0.14), transparent 22%),
+    #eef4fb;
+  color: #172033;
+}
+
+:root[data-theme="light"] .topbar {
+  background: rgba(248, 250, 252, 0.9);
+  border-bottom: 1px solid rgba(100, 116, 139, 0.22);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .brand b,
+:root[data-theme="light"] .panel h2 {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .brand small,
+:root[data-theme="light"] .sync-state,
+:root[data-theme="light"] .topnav {
+  color: #475569;
+}
+
+:root[data-theme="light"] .topnav a,
+:root[data-theme="light"] .topnav span {
+  color: #475569;
+}
+
+:root[data-theme="light"] .topnav a:hover,
+:root[data-theme="light"] .topnav span:hover,
+:root[data-theme="light"] .topnav .active {
+  color: #1d4ed8;
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.28);
+}
+
+:root[data-theme="light"] .panel {
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  color: #172033;
+  border: 1px solid rgba(100, 116, 139, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .project-row,
+:root[data-theme="light"] .alert-list div,
+:root[data-theme="light"] .kpi-grid div,
+:root[data-theme="light"] .ghost-button,
+:root[data-theme="light"] .full-button,
+:root[data-theme="light"] .local-path-panel,
+:root[data-theme="light"] .github-repo-item,
+:root[data-theme="light"] .github-commit-item,
+:root[data-theme="light"] .todo-card,
+:root[data-theme="light"] .worklog-item,
+:root[data-theme="light"] .settings-card {
+  background: #f1f5f9;
+  color: #172033;
+  border-color: rgba(100, 116, 139, 0.22);
+}
+
+:root[data-theme="light"] .project-row.selected {
+  background: #eaf2ff;
+  border-color: rgba(37, 99, 235, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
+}
+
+:root[data-theme="light"] .project-main b,
+:root[data-theme="light"] .main-task b,
+:root[data-theme="light"] .main-task strong,
+:root[data-theme="light"] .side-project-card b,
+:root[data-theme="light"] .bar-list div,
+:root[data-theme="light"] .tech-legend div,
+:root[data-theme="light"] table,
+:root[data-theme="light"] .log-list,
+:root[data-theme="light"] .memo-list,
+:root[data-theme="light"] .subtasks,
+:root[data-theme="light"] .empty {
+  color: #172033;
+}
+
+:root[data-theme="light"] .project-main small,
+:root[data-theme="light"] .project-main em,
+:root[data-theme="light"] .project-side small,
+:root[data-theme="light"] .kpi-grid small,
+:root[data-theme="light"] .bar-list em,
+:root[data-theme="light"] .ring small,
+:root[data-theme="light"] .brand small,
+:root[data-theme="light"] .subtasks small,
+:root[data-theme="light"] .side-project-card small,
+:root[data-theme="light"] .side-project-card em {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .alert-list span {
+  color: #334155;
+}
+
+:root[data-theme="light"] .alert-list b {
+  color: #dc2626;
+}
+
+:root[data-theme="light"] .kpi-grid b,
+:root[data-theme="light"] .log-list b {
+  color: #0284c7;
+}
+
+:root[data-theme="light"] .main-task {
+  background: linear-gradient(90deg, #fee2e2, #f8fafc);
+  border-color: rgba(239, 68, 68, 0.42);
+}
+
+:root[data-theme="light"] .bar-list b {
+  background: #dbe3ec;
+}
+
+:root[data-theme="light"] .ring {
+  background:
+    radial-gradient(circle, #ffffff 52%, transparent 53%),
+    conic-gradient(var(--ring) var(--value), #dbe3ec 0);
+}
+
+:root[data-theme="light"] table th,
+:root[data-theme="light"] table td {
+  border-bottom-color: rgba(100, 116, 139, 0.18);
+}
+
+:root[data-theme="light"] td:not(:first-child) {
+  color: #16a34a;
+}
+
+:root[data-theme="light"] .tag-cloud span {
+  color: #15803d;
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+:root[data-theme="light"] .tag-cloud span:nth-child(3n) {
+  color: #0e7490;
+  background: rgba(6, 182, 212, 0.14);
+  border-color: rgba(6, 182, 212, 0.28);
+}
+
+:root[data-theme="light"] .tag-cloud span:nth-child(4n) {
+  color: #6d28d9;
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.28);
+}
+
+:root[data-theme="light"] .abandoned-box {
+  color: #991b1b;
+  background: #fee2e2;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+:root[data-theme="light"] .abandoned-box span {
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .abandoned-box em {
+  color: #b45309;
+}
+
+:root[data-theme="light"] .panel button,
+:root[data-theme="light"] .sync-state button {
+  color: #1e293b;
+  background: #ffffff;
+  border-color: rgba(100, 116, 139, 0.28);
+}
+
+:root[data-theme="light"] .panel button:hover,
+:root[data-theme="light"] .sync-state button:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+:root[data-theme="light"] .recharts-cartesian-axis-tick-value {
+  fill: #64748b;
+}
+
+:root[data-theme="light"] .recharts-cartesian-grid line {
+  stroke: rgba(100, 116, 139, 0.2);
+}
+
+:root[data-theme="light"] .panel::-webkit-scrollbar-thumb,
+:root[data-theme="light"] .project-stack::-webkit-scrollbar-thumb,
+:root[data-theme="light"] .todo-rate-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+}
+
+:root[data-accent="blue"] {
+  --accent: #3b82f6;
+  --accent-soft: rgba(59, 130, 246, 0.16);
+  --accent-border: rgba(59, 130, 246, 0.42);
+}
+
+:root[data-accent="purple"] {
+  --accent: #8b5cf6;
+  --accent-soft: rgba(139, 92, 246, 0.16);
+  --accent-border: rgba(139, 92, 246, 0.42);
+}
+
+:root[data-accent="green"] {
+  --accent: #22c55e;
+  --accent-soft: rgba(34, 197, 94, 0.16);
+  --accent-border: rgba(34, 197, 94, 0.42);
+}
+
+:root[data-accent="orange"] {
+  --accent: #f97316;
+  --accent-soft: rgba(249, 115, 22, 0.16);
+  --accent-border: rgba(249, 115, 22, 0.42);
+}
+
+:root[data-accent] .brand-mark,
+:root[data-accent] .topnav .active,
+:root[data-accent] .detail-menu a.active,
+:root[data-accent] .detail-menu a:hover,
+:root[data-accent] .detail-tabs .active,
+:root[data-accent] .worklog-day-list button.active,
+:root[data-accent] .project-row.selected,
+:root[data-accent] .settings-card.active,
+:root[data-accent] .todo-filter.active {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+:root[data-accent] .topnav a:hover,
+:root[data-accent] .topnav span:hover,
+:root[data-accent] .panel button:hover,
+:root[data-accent] .sync-state button:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+:root[data-accent] .detail-tabs .active {
+  border-bottom-color: var(--accent);
+}
+
+/* :root[data-accent] .activity-dot, */
+:root[data-accent] .mini-bar i,
+:root[data-accent] .bar-list i,
+:root[data-accent] .todo-progress i,
+:root[data-accent] .progress-bar i {
+  background: var(--accent);
+}
+
+/* :root[data-accent] .activity-dot {
+  box-shadow: 0 0 0 4px var(--accent-soft);
+} */
+
+:root[data-accent] .kpi-grid b,
+:root[data-accent] .log-list b,
+:root[data-accent] .activity-item b,
+:root[data-accent] .activity-item strong,
+:root[data-accent] .project-title-block h1 {
+  color: var(--accent);
+}
+
+:root[data-accent] .github-repo-item,
+:root[data-accent] .github-commit-item,
+:root[data-accent] .local-path-panel {
+  border-color: var(--accent-border);
+}
+
+:root[data-compact="true"] .panel {
+  padding: 8px;
+}
+
+:root[data-compact="true"] .wide-board {
+  gap: 6px;
+  padding: 6px;
+}
+
+:root[data-compact="true"] .topbar {
+  height: 44px;
+  flex-basis: 44px;
+}
+
+/* =========================
+   Light Theme: sub pages fix
+   Project / TODO / WorkLog / Settings
+========================= */
+
+:root[data-theme="light"] .project-list-card,
+:root[data-theme="light"] .github-repo-card,
+:root[data-theme="light"] .todo-kanban-column,
+:root[data-theme="light"] .todo-task-card,
+:root[data-theme="light"] .todo-stat-grid div,
+:root[data-theme="light"] .todo-side-summary div,
+:root[data-theme="light"] .backlog-row,
+:root[data-theme="light"] .worklog-card,
+:root[data-theme="light"] .worklog-diff,
+:root[data-theme="light"] .worklog-summary-list div,
+:root[data-theme="light"] .worklog-project-list div,
+:root[data-theme="light"] .readme-check-grid div {
+  background: #f8fafc;
+  color: #172033;
+  border-color: rgba(100, 116, 139, 0.24);
+}
+
+:root[data-theme="light"] .project-list-card:hover,
+:root[data-theme="light"] .todo-task-card:hover,
+:root[data-theme="light"] .github-repo-card:hover {
+  background: #eff6ff;
+  border-color: var(--accent-border, rgba(59, 130, 246, 0.42));
+}
+
+:root[data-theme="light"] .project-list-card b,
+:root[data-theme="light"] .github-repo-card b,
+:root[data-theme="light"] .todo-title-line h1,
+:root[data-theme="light"] .todo-kanban-head h2,
+:root[data-theme="light"] .todo-task-main strong,
+:root[data-theme="light"] .todo-stat-grid b,
+:root[data-theme="light"] .todo-side-summary b,
+:root[data-theme="light"] .backlog-row b,
+:root[data-theme="light"] .worklog-main-head h1,
+:root[data-theme="light"] .worklog-card h2,
+:root[data-theme="light"] .worklog-time,
+:root[data-theme="light"] .worklog-mini-stats b,
+:root[data-theme="light"] .worklog-summary-list b,
+:root[data-theme="light"] .worklog-project-list b,
+:root[data-theme="light"] .project-readme-quality b {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .project-list-card small,
+:root[data-theme="light"] .project-list-card em,
+:root[data-theme="light"] .github-repo-card p,
+:root[data-theme="light"] .github-repo-sub,
+:root[data-theme="light"] .github-repo-empty,
+:root[data-theme="light"] .todo-title-line p,
+:root[data-theme="light"] .todo-form label,
+:root[data-theme="light"] .todo-kanban-head p,
+:root[data-theme="light"] .todo-task-main p,
+:root[data-theme="light"] .todo-task-actions small,
+:root[data-theme="light"] .todo-stat-grid span,
+:root[data-theme="light"] .todo-side-summary span,
+:root[data-theme="light"] .backlog-row small,
+:root[data-theme="light"] .worklog-main-head p,
+:root[data-theme="light"] .worklog-mini-stats,
+:root[data-theme="light"] .worklog-card p,
+:root[data-theme="light"] .worklog-summary-list span,
+:root[data-theme="light"] .worklog-project-list span,
+:root[data-theme="light"] .settings-head p,
+:root[data-theme="light"] .settings-help,
+:root[data-theme="light"] .project-readme-quality,
+:root[data-theme="light"] .project-readme-quality span,
+:root[data-theme="light"] .project-readme-quality small {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .todo-form input,
+:root[data-theme="light"] .todo-form textarea,
+:root[data-theme="light"] .todo-form select,
+:root[data-theme="light"] .todo-filters select,
+:root[data-theme="light"] .worklog-date-input,
+:root[data-theme="light"] .worklog-main-head select,
+:root[data-theme="light"] .settings-field input,
+:root[data-theme="light"] .settings-field select,
+:root[data-theme="light"] .dev-note-input {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(100, 116, 139, 0.28);
+}
+
+:root[data-theme="light"] .todo-kanban-column {
+  background: #f1f5f9;
+}
+
+:root[data-theme="light"] .todo-kanban-column.drag-over {
+  background: var(--accent-soft, #dbeafe);
+  border-color: var(--accent-border, rgba(59, 130, 246, 0.42));
+}
+
+:root[data-theme="light"] .todo-kanban-head span,
+:root[data-theme="light"] .worklog-day-list b {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+:root[data-theme="light"] .github-repo-meta span,
+:root[data-theme="light"] .worklog-meta span,
+:root[data-theme="light"] .project-tech-chips span,
+:root[data-theme="light"] .todo-tags span {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+:root[data-theme="light"] .todo-tags em {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+:root[data-theme="light"] .todo-tags i.high,
+:root[data-theme="light"] .backlog-row em.high {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .todo-tags i.medium,
+:root[data-theme="light"] .backlog-row em.medium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+:root[data-theme="light"] .todo-tags i.low,
+:root[data-theme="light"] .backlog-row em.low {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+:root[data-theme="light"] .todo-check {
+  background: #ffffff;
+  color: #15803d;
+}
+
+:root[data-theme="light"] .todo-check.done {
+  background: #dcfce7;
+}
+
+:root[data-theme="light"] .todo-empty,
+:root[data-theme="light"] .worklog-empty {
+  color: #64748b;
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+:root[data-theme="light"] .settings-toggle {
+  background: #cbd5e1;
+}
+
+:root[data-theme="light"] .settings-toggle.on {
+  background: var(--accent, #3b82f6);
+}
+
+:root[data-theme="light"] .github-connected-box,
+:root[data-theme="light"] .github-note {
+  background: #f8fafc;
+  color: #172033;
+  border-color: rgba(100, 116, 139, 0.24);
+}
+
+:root[data-theme="light"] .github-message,
+:root[data-theme="light"] .github-repo-message,
+:root[data-theme="light"] .local-path-message {
+  color: #15803d !important;
+}
+
+:root[data-theme="light"] .settings-error {
+  color: #b91c1c;
+}
+
+:root[data-theme="light"] .detail-stat-card,
+:root[data-theme="light"] .github-commit-card {
+  background: #f8fafc;
+  color: #172033;
+  border-color: rgba(100, 116, 139, 0.24);
+}
+
+:root[data-theme="light"] .detail-stat-card span,
+:root[data-theme="light"] .detail-stat-card small,
+:root[data-theme="light"] .github-commit-card p,
+:root[data-theme="light"] .github-commit-card small,
+:root[data-theme="light"] .tech-list span,
+:root[data-theme="light"] .next-action-panel p,
+:root[data-theme="light"] .muted,
+:root[data-theme="light"] .issue-row,
+:root[data-theme="light"] .issue-head,
+:root[data-theme="light"] .detail-tabs {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .detail-stat-card b,
+:root[data-theme="light"] .github-commit-card b,
+:root[data-theme="light"] .next-action-panel strong,
+:root[data-theme="light"] .info-panel dd,
+:root[data-theme="light"] .section-head h2,
+:root[data-theme="light"] .project-title-block h1 {
+  color: #0f172a;
+}
+
+:root[data-theme="light"] .project-actions a,
+:root[data-theme="light"] .project-actions button,
+:root[data-theme="light"] .section-head button,
+:root[data-theme="light"] .local-path-form button,
+:root[data-theme="light"] .local-path-select {
+  background: #ffffff;
+  color: #334155;
+  border-color: rgba(100, 116, 139, 0.28);
+}
+
+:root[data-theme="light"] .local-path-form input {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(100, 116, 139, 0.28);
+}
+
+:root[data-theme="light"] .issue-table,
+:root[data-theme="light"] .issue-row,
+:root[data-theme="light"] .detail-tabs,
+:root[data-theme="light"] .project-hero {
+  border-color: rgba(100, 116, 139, 0.18);
+}
+
+:root[data-theme="light"] .empty-row {
+  color: #94a3b8;
+}
+
+:root[data-theme="light"] .github-commit-card a {
+  color: #2563eb;
+}
+
+:root[data-theme="light"] .readme-check-grid div {
+  background: #f8fafc;
+  color: #172033;
+  border-color: rgba(100, 116, 139, 0.24);
+}
+
+:root[data-theme="light"] .readme-check-grid span {
+  color: #64748b;
+}
+
+:root[data-theme="light"] .readme-check-grid .passed b {
+  color: #15803d;
+}
+
+:root[data-theme="light"] .readme-check-grid .missing b {
+  color: #dc2626;
+}
+
+:root[data-theme="light"] .status-chip,
+:root[data-theme="light"] .project-status,
+:root[data-theme="light"] .badge-status {
+  background: #22c55e !important;
+  color: #ffffff !important;
+  border: 1px solid #16a34a;
+  font-weight: 700;
+}
+
+:root[data-theme="light"] .priority-chip,
+:root[data-theme="light"] .badge-priority,
+:root[data-theme="light"] .priority-badge {
+  font-weight: 700;
+}
+
+/* Low */
+:root[data-theme="light"] .priority-low,
+:root[data-theme="light"] .priority-chip.low,
+:root[data-theme="light"] .badge-priority.low {
+  background: #facc15 !important;
+  color: #713f12 !important;
+  border: 1px solid #eab308;
+}
+
+/* Medium */
+:root[data-theme="light"] .priority-medium,
+:root[data-theme="light"] .priority-chip.medium,
+:root[data-theme="light"] .badge-priority.medium {
+  background: #fb923c !important;
+  color: #7c2d12 !important;
+  border: 1px solid #ea580c;
+}
+
+/* High */
+:root[data-theme="light"] .priority-high,
+:root[data-theme="light"] .priority-chip.high,
+:root[data-theme="light"] .badge-priority.high {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: 1px solid #dc2626;
+}
+
+/* =========================
+   REAL light theme chip fix
+========================= */
+
+/* 開発中 */
+:root[data-theme="light"] .status-chip.active,
+:root[data-theme="light"] .status-pill {
+  background: #22c55e !important;
+  color: #ffffff !important;
+  border: 1px solid #16a34a !important;
+  font-weight: 700;
+}
+
+/* 停止中 */
+:root[data-theme="light"] .status-chip.paused {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: 1px solid #dc2626 !important;
+}
+
+/* Low */
+:root[data-theme="light"] .priority,
+:root[data-theme="light"] .priority-pill {
+  background: #facc15 !important;
+  color: #713f12 !important;
+  border: 1px solid #eab308 !important;
+  font-weight: 700;
+}
+
+/* P4/P5 */
+:root[data-theme="light"] .priority.p4,
+:root[data-theme="light"] .priority.p5 {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  border: 1px solid #dc2626 !important;
+}
+
+/* =========================
+   ProjectDetail Light Theme: real text contrast fix
+========================= */
+
+:root[data-theme="light"] .project-detail-shell {
+  color: #172033;
+}
+
+/* パネル内の通常テキスト */
+:root[data-theme="light"] .project-detail-shell .panel,
+:root[data-theme="light"] .project-detail-shell .panel p,
+:root[data-theme="light"] .project-detail-shell .panel span,
+:root[data-theme="light"] .project-detail-shell .panel em,
+:root[data-theme="light"] .project-detail-shell .panel dt,
+:root[data-theme="light"] .project-detail-shell .panel small,
+:root[data-theme="light"] .project-detail-shell .muted {
+  color: #475569 !important;
+}
+
+/* タイトル・重要テキスト */
+:root[data-theme="light"] .project-detail-shell h1,
+:root[data-theme="light"] .project-detail-shell h2,
+:root[data-theme="light"] .project-detail-shell h3,
+:root[data-theme="light"] .project-detail-shell b,
+:root[data-theme="light"] .project-detail-shell strong,
+:root[data-theme="light"] .project-detail-shell .detail-stat-card b,
+:root[data-theme="light"] .project-detail-shell .info-panel dd,
+:root[data-theme="light"] .project-detail-shell .tech-list b,
+:root[data-theme="light"] .project-detail-shell .next-action-panel strong {
+  color: #0f172a !important;
+}
+
+/* サイドバー */
+:root[data-theme="light"] .project-detail-shell .back-link {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .side-project-card {
+  background: #eaf2ff !important;
+  border-color: #93c5fd !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .side-project-card small,
+:root[data-theme="light"] .project-detail-shell .side-project-card em {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .detail-menu a {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .detail-menu a.active,
+:root[data-theme="light"] .project-detail-shell .detail-menu a:hover {
+  color: #1d4ed8 !important;
+  background: #dbeafe !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .detail-menu span {
+  background: #e2e8f0 !important;
+  color: #334155 !important;
+}
+
+/* 上部メタ情報 */
+:root[data-theme="light"] .project-detail-shell .project-title-block p,
+:root[data-theme="light"] .project-detail-shell .project-meta-line,
+:root[data-theme="light"] .project-detail-shell .project-meta-line span:not(.status-pill):not(.priority-pill) {
+  color: #475569 !important;
+}
+
+/* タブ */
+:root[data-theme="light"] .project-detail-shell .detail-tabs,
+:root[data-theme="light"] .project-detail-shell .detail-tabs span {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .detail-tabs .active {
+  color: #2563eb !important;
+}
+
+/* 統計カード */
+:root[data-theme="light"] .project-detail-shell .detail-stat-card {
+  background: #f8fafc !important;
+  border-color: rgba(100, 116, 139, 0.28) !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .detail-stat-card span,
+:root[data-theme="light"] .project-detail-shell .detail-stat-card small {
+  color: #475569 !important;
+}
+
+/* Issues / TODO */
+:root[data-theme="light"] .project-detail-shell .issue-head,
+:root[data-theme="light"] .project-detail-shell .issue-row {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .empty-row {
+  color: #64748b !important;
+}
+
+/* アクティビティ */
+:root[data-theme="light"] .project-detail-shell .activity-item b {
+  color: #2563eb !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .activity-item small {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .activity-item strong {
+  color: #1d4ed8 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .activity-item em {
+  color: #334155 !important;
+}
+
+/* コントリビューター・情報 */
+:root[data-theme="light"] .project-detail-shell .contributor-row small,
+:root[data-theme="light"] .project-detail-shell .contributor-row em,
+:root[data-theme="light"] .project-detail-shell .info-panel dt {
+  color: #475569 !important;
+}
+
+/* README品質チェック */
+:root[data-theme="light"] .project-detail-shell .readme-check-grid div {
+  background: #f8fafc !important;
+  border-color: rgba(100, 116, 139, 0.24) !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .readme-check-grid span {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .readme-check-grid .passed b {
+  color: #15803d !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .readme-check-grid .missing b {
+  color: #dc2626 !important;
+}
+
+/* GitHub Commit履歴 */
+:root[data-theme="light"] .project-detail-shell .github-commit-card {
+  background: #f8fafc !important;
+  border-color: rgba(100, 116, 139, 0.24) !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .github-commit-card p,
+:root[data-theme="light"] .project-detail-shell .github-commit-card small {
+  color: #475569 !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .github-commit-card a {
+  color: #2563eb !important;
+}
+
+/* 開発ノート */
+:root[data-theme="light"] .project-detail-shell .dev-note-input {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(100, 116, 139, 0.28) !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .dev-note-input::placeholder {
+  color: #64748b !important;
+}
+
+/* local_path 注意文は見える黄色に */
+:root[data-theme="light"] .project-detail-shell .local-path-warning {
+  color: #b45309 !important;
+  font-weight: 700;
+}
+
+/* 開発中・Low */
+:root[data-theme="light"] .project-detail-shell .status-chip.active,
+:root[data-theme="light"] .project-detail-shell .status-pill {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border: 1px solid #15803d !important;
+}
+
+:root[data-theme="light"] .project-detail-shell .priority-pill {
+  background: #facc15 !important;
+  color: #713f12 !important;
+  border: 1px solid #eab308 !important;
 }

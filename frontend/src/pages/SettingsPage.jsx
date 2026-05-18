@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api";
+import api, { clearApiCache } from "../services/api";
 
 function Toggle({ checked, onChange }) {
   return (
@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [github, setGithub] = useState(null);
   const [githubToken, setGithubToken] = useState("");
   const [githubMessage, setGithubMessage] = useState("");
+  const [settingsError, setSettingsError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -36,8 +38,22 @@ export default function SettingsPage() {
   }, []);
 
   async function fetchSettings() {
-    const res = await api.get("/api/settings");
-    setSettings(res.data);
+    setSettingsError("");
+
+    try {
+        const res = await api.get("/api/settings");
+        setSettings(res.data);
+        localStorage.setItem("dev-dashboard-settings", JSON.stringify(res.data));
+        window.dispatchEvent(new CustomEvent("dev-dashboard-settings-updated", {
+        detail: res.data,
+        }));
+    } catch (error) {
+        setSettingsError(
+        error?.response?.data?.detail ||
+        error.message ||
+        "設定の取得に失敗しました。"
+        );
+    }
   }
 
   async function fetchGithubStatus() {
@@ -99,13 +115,15 @@ export default function SettingsPage() {
 
   function patch(section, key, value) {
     setSettings((current) => ({
-      ...current,
-      [section]: {
-        ...current[section],
+        ...current,
+        [section]: {
+        ...(current?.[section] || {}),
         [key]: value,
-      },
+        },
     }));
+
     setSaved(false);
+    setSettingsError("");
   }
 
   function patchTodoTypes(value) {
@@ -120,14 +138,59 @@ export default function SettingsPage() {
   }
 
   async function save() {
-    await api.put("/api/settings", settings);
-    setSaved(true);
+    setSaving(true);
+    setSettingsError("");
+
+    try {
+        const res = await api.put("/api/settings", settings);
+
+        setSettings(res.data);
+        localStorage.setItem("dev-dashboard-settings", JSON.stringify(res.data));
+
+        clearApiCache();
+
+        window.dispatchEvent(new CustomEvent("dev-dashboard-settings-updated", {
+        detail: res.data,
+        }));
+
+        setSaved(true);
+    } catch (error) {
+        setSettingsError(
+        error?.response?.data?.detail ||
+        error.message ||
+        "設定の保存に失敗しました。"
+        );
+    } finally {
+        setSaving(false);
+    }
   }
 
   async function reset() {
-    const res = await api.post("/api/settings/reset");
-    setSettings(res.data);
-    setSaved(true);
+    setSaving(true);
+    setSettingsError("");
+
+    try {
+        const res = await api.post("/api/settings/reset");
+
+        setSettings(res.data);
+        localStorage.setItem("dev-dashboard-settings", JSON.stringify(res.data));
+
+        clearApiCache();
+
+        window.dispatchEvent(new CustomEvent("dev-dashboard-settings-updated", {
+        detail: res.data,
+        }));
+
+        setSaved(true);
+    } catch (error) {
+        setSettingsError(
+        error?.response?.data?.detail ||
+        error.message ||
+        "設定の初期化に失敗しました。"
+        );
+    } finally {
+        setSaving(false);
+    }
   }
 
   if (!settings) {
@@ -155,7 +218,9 @@ export default function SettingsPage() {
 
         <div className="sync-state">
           {saved ? <span className="saved">保存済み</span> : <span>未保存</span>}
-          <button type="button" onClick={save}>保存</button>
+          <button type="button" onClick={save} disabled={saving}>
+            {saving ? "保存中..." : "保存"}
+          </button>
         </div>
       </header>
 
@@ -169,6 +234,9 @@ export default function SettingsPage() {
           <button type="button" className="settings-reset" onClick={reset}>
             初期値に戻す
           </button>
+          {settingsError ? (
+            <p className="settings-error">{settingsError}</p>
+          ) : null}
         </section>
 
         <section className="settings-grid">

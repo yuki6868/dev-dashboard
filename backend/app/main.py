@@ -115,6 +115,7 @@ def read_projects(db: Session = Depends(get_db)):
             "priority": project.priority,
             "next_action": project.next_action,
             "tech_stack": tech_stack,
+            "readme_quality": check_readme_quality(project.local_path),
             "created_at": project.created_at,
             "updated_at": project.updated_at,
         })

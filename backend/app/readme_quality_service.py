@@ -45,8 +45,25 @@ QUALITY_CHECKS = [
 ]
 
 
+def build_empty_checks():
+    return [
+        {
+            "key": item["key"],
+            "label": item["label"],
+            "passed": False,
+        }
+        for item in QUALITY_CHECKS
+    ]
+
+
 def find_readme_path(local_path: str) -> Path | None:
-    base = Path(local_path)
+    if not local_path or not local_path.strip():
+        return None
+
+    base = Path(local_path).expanduser()
+
+    if not base.exists() or not base.is_dir():
+        return None
 
     for name in ["README.md", "readme.md", "README.txt", "readme.txt"]:
         path = base / name
@@ -60,11 +77,13 @@ def check_readme_quality(local_path: str) -> dict:
     readme_path = find_readme_path(local_path)
 
     if readme_path is None:
+        empty_checks = build_empty_checks()
+
         return {
             "score": 0,
             "max_score": len(QUALITY_CHECKS),
             "percentage": 0,
-            "checks": [],
+            "checks": empty_checks,
             "missing": [item["label"] for item in QUALITY_CHECKS],
             "error_message": "README not found",
         }

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 
 
@@ -52,6 +52,7 @@ class ProjectResponse(BaseModel):
     priority: Optional[str] = None
     next_action: Optional[str] = None
     tech_stack: list[str] = []
+    readme_quality: Optional[dict[str, Any]] = None
     created_at: datetime
     updated_at: datetime
 

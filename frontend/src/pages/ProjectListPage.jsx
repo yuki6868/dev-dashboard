@@ -158,6 +158,18 @@ export default function ProjectListPage() {
                   <em>
                     GitHub: {project.github_url ? "連携あり" : "未設定"}
                   </em>
+
+                  <div className="project-readme-quality">
+                    <span>README品質</span>
+                    <b>{project.readme_quality?.percentage ?? 0}%</b>
+                    {project.readme_quality?.error_message ? (
+                        <small>READMEなし</small>
+                    ) : (
+                        <small>
+                        {project.readme_quality?.score ?? 0}/{project.readme_quality?.max_score ?? 8}
+                        </small>
+                    )}
+                  </div>
                   <div className="project-tech-chips">
                     {(project.tech_stack?.length ? project.tech_stack : [project.github_language])
                         .filter(Boolean)

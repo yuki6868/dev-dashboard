@@ -105,6 +105,11 @@ export default function ProjectDetailPage({ settings }) {
   const [localPathInput, setLocalPathInput] = useState("");
   const [localPathMessage, setLocalPathMessage] = useState("");
   const [selectingFolder, setSelectingFolder] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [githubOverview, setGithubOverview] = useState(null);
+  const [githubIssues, setGithubIssues] = useState([]);
+  const [githubBranches, setGithubBranches] = useState([]);
+  const [githubTags, setGithubTags] = useState([]);
 
   useEffect(() => {
     fetchProjectDetail();
@@ -134,6 +139,10 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
     devNotesRes,
     detailRes,
     commitsRes,
+    githubOverviewRes,
+    githubIssuesRes,
+    githubBranchesRes,
+    githubTagsRes,
   ] = await Promise.allSettled([
     cachedGet(`/api/projects/${projectId}`),
     cachedGet(`/api/projects/${projectId}/git-status`, 60 * 1000),
@@ -144,6 +153,10 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
     cachedGet(`/api/dev-notes?project_id=${projectId}`, 60 * 1000),
     cachedGet(`/api/projects/${projectId}/detail-summary`, 60 * 1000),
     cachedGet(`/api/projects/${projectId}/commits`, 5 * 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/github-overview`, 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/github-issues`, 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/github-branches`, 60 * 1000),
+    cachedGet(`/api/projects/${projectId}/github-tags`, 60 * 1000),
   ]);
 
   if (projectRes.status === "fulfilled") {
@@ -158,8 +171,22 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
   if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
   if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
   if (commitsRes.status === "fulfilled") setCommits(commitsRes.value.data || []);
+  if (githubOverviewRes.status === "fulfilled") {
+    setGithubOverview(githubOverviewRes.value.data?.repository || null);
+  }
 
-  setLoading(false);
+  if (githubIssuesRes.status === "fulfilled") {
+    setGithubIssues(githubIssuesRes.value.data?.issues || []);
+  }
+
+  if (githubBranchesRes.status === "fulfilled") {
+    setGithubBranches(githubBranchesRes.value.data?.branches || []);
+  }
+
+  if (githubTagsRes.status === "fulfilled") {
+    setGithubTags(githubTagsRes.value.data?.tags || []);
+  }
+    setLoading(false);
 }
 
 //   async function fetchCommits() {
@@ -342,12 +369,57 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
           </div>
 
           <nav className="detail-menu">
-            <a className="active">▣ 概要</a>
-            <a>◎ Issues <span>{openTodos.length}</span></a>
-            <a>⑂ コミット <span>{commitCount}</span></a>
-            <a>⑃ ブランチ <span>{detail?.branch_count || 0}</span></a>
-            <a>◇ タグ</a>
-            <a>⚙ 設定</a>
+            <button
+              type="button"
+              className={activeTab === "overview" ? "active" : ""}
+              onClick={() => setActiveTab("overview")}
+            >
+              <span>▣ 概要</span>
+            </button>
+
+            <button
+              type="button"
+              className={activeTab === "issues" ? "active" : ""}
+              onClick={() => setActiveTab("issues")}
+            >
+              <span>◎ Issues</span>
+              <em>{githubIssues.length || openTodos.length}</em>
+            </button>
+
+            <button
+              type="button"
+              className={activeTab === "commits" ? "active" : ""}
+              onClick={() => setActiveTab("commits")}
+            >
+              <span>⑂ コミット</span>
+              <em>{commitCount}</em>
+            </button>
+
+            <button
+              type="button"
+              className={activeTab === "branches" ? "active" : ""}
+              onClick={() => setActiveTab("branches")}
+            >
+              <span>⑃ ブランチ</span>
+              <em>{githubBranches.length || detail?.branch_count || 0}</em>
+            </button>
+
+            <button
+              type="button"
+              className={activeTab === "tags" ? "active" : ""}
+              onClick={() => setActiveTab("tags")}
+            >
+              <span>◇ タグ</span>
+              <em>{githubTags.length}</em>
+            </button>
+
+            <button
+              type="button"
+              className={activeTab === "settings" ? "active" : ""}
+              onClick={() => setActiveTab("settings")}
+            >
+              <span>⚙ 設定</span>
+            </button>
           </nav>
         </aside>
 
@@ -429,95 +501,231 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
           </div>
 
           <div className="detail-tabs">
-            <span className="active">概要</span>
-            <span>Issues</span>
-            <span>コミット</span>
-            <span>ブランチ</span>
-            <span>タグ</span>
-            <span>設定</span>
+            <button className={activeTab === "overview" ? "active" : ""} onClick={() => setActiveTab("overview")}>概要</button>
+            <button className={activeTab === "issues" ? "active" : ""} onClick={() => setActiveTab("issues")}>Issues</button>
+            <button className={activeTab === "commits" ? "active" : ""} onClick={() => setActiveTab("commits")}>コミット</button>
+            <button className={activeTab === "branches" ? "active" : ""} onClick={() => setActiveTab("branches")}>ブランチ</button>
+            <button className={activeTab === "tags" ? "active" : ""} onClick={() => setActiveTab("tags")}>タグ</button>
+            <button className={activeTab === "settings" ? "active" : ""} onClick={() => setActiveTab("settings")}>設定</button>
           </div>
 
-          <div className="detail-stat-grid">
-            <div className="detail-stat-card">
-              <span>オープンIssues</span>
-              <b>{openTodos.length}</b>
-              <small>全体の {todos.length ? Math.round((openTodos.length / todos.length) * 100) : 0}%</small>
-            </div>
-
-            <div className="detail-stat-card">
-              <span>完了Issues</span>
-              <b>{doneTodos.length}</b>
-              <small>全体の {todos.length ? Math.round((doneTodos.length / todos.length) * 100) : 0}%</small>
-            </div>
-
-            <div className="detail-stat-card">
-              <span>総コミット数</span>
-              <b>{commitCount}</b>
-              <small>{recentCommits.length > 0 ? "ローカルGitから取得" : "GitHubから取得"}</small>
-            </div>
-
-            <div className="detail-stat-card">
-              <span>アクティブブランチ</span>
-              <b>{detail?.branch_count || 0}</b>
-              <small>local / remote 合計</small>
-            </div>
-
-            <div className="detail-stat-card">
-              <span>最終コミット</span>
-              <b>{timeAgo(
-                gitStatus?.latest_commit_at ||
-                latestCommit?.committed_at ||
-                project.github_pushed_at ||
-                project.github_updated_at
-              )}</b>
-              <small>{formatDate(
-                gitStatus?.latest_commit_at ||
-                latestCommit?.committed_at ||
-                project.github_pushed_at ||
-                project.github_updated_at
-              )}</small>
-            </div>
-          </div>
-
-          <section className="issues-panel">
-            <div className="section-head">
-              <h2>最近のIssues / TODO</h2>
-              <div>
-                <button type="button">すべてのラベル</button>
-                <button type="button">ソート: 更新日</button>
-                <button type="button">Issues一覧へ →</button>
-              </div>
-            </div>
-
-            <div className="issue-table">
-              <div className="issue-row issue-head">
-                <span>タイトル</span>
-                <span>ラベル</span>
-                <span>優先度</span>
-                <span>状態</span>
-                <span>更新日</span>
-              </div>
-
-              {todos.slice(0, 10).map((todo) => (
-                <div className="issue-row" key={todo.id}>
-                  <span>
-                    <i className={todo.is_completed ? "ok-dot done" : "ok-dot"} />
-                    #{todo.id}　{todo.title}
-                  </span>
-                  <span>
-                    <em className="label-chip">{todo.todo_type}</em>
-                  </span>
-                  <span>{priorityLabel(todo.priority)}</span>
-                  <span>{todo.is_completed ? "完了" : "未完了"}</span>
-                  <span>{timeAgo(todo.created_at)}</span>
+          {activeTab === "overview" && (
+            <>
+              <div className="detail-stat-grid">
+                <div className="detail-stat-card">
+                  <span>オープンIssues</span>
+                  <b>{githubOverview?.open_issues_count ?? openTodos.length}</b>
+                  <small>GitHub / TODO から取得</small>
                 </div>
-              ))}
 
-              {todos.length === 0 && (
-                <div className="empty-row">TODO がまだ登録されていません。</div>
-              )}
-            </div>
-          </section>
+                <div className="detail-stat-card">
+                  <span>完了Issues</span>
+                  <b>{doneTodos.length}</b>
+                  <small>アプリ内TODOの完了数</small>
+                </div>
+
+                <div className="detail-stat-card">
+                  <span>総コミット数</span>
+                  <b>{commitCount}</b>
+                  <small>{recentCommits.length > 0 ? "ローカルGitから取得" : "GitHubから取得"}</small>
+                </div>
+
+                <div className="detail-stat-card">
+                  <span>アクティブブランチ</span>
+                  <b>{githubBranches.length || detail?.branch_count || 0}</b>
+                  <small>GitHub / local 合計</small>
+                </div>
+
+                <div className="detail-stat-card">
+                  <span>最終コミット</span>
+                  <b>{timeAgo(
+                    gitStatus?.latest_commit_at ||
+                    latestCommit?.committed_at ||
+                    githubOverview?.pushed_at ||
+                    project.github_pushed_at ||
+                    project.github_updated_at
+                  )}</b>
+                  <small>{formatDate(
+                    gitStatus?.latest_commit_at ||
+                    latestCommit?.committed_at ||
+                    githubOverview?.pushed_at ||
+                    project.github_pushed_at ||
+                    project.github_updated_at
+                  )}</small>
+                </div>
+              </div>
+
+              <section className="issues-panel">
+                <div className="section-head">
+                  <h2>最近のIssues / TODO</h2>
+                </div>
+
+                <div className="issue-table">
+                  <div className="issue-row issue-head">
+                    <span>タイトル</span>
+                    <span>ラベル</span>
+                    <span>優先度</span>
+                    <span>状態</span>
+                    <span>更新日</span>
+                  </div>
+
+                  {todos.slice(0, 10).map((todo) => (
+                    <div className="issue-row" key={todo.id}>
+                      <span>
+                        <i className={todo.is_completed ? "ok-dot done" : "ok-dot"} />
+                        #{todo.id}　{todo.title}
+                      </span>
+                      <span>
+                        <em className="label-chip">{todo.todo_type}</em>
+                      </span>
+                      <span>{priorityLabel(todo.priority)}</span>
+                      <span>{todo.is_completed ? "完了" : "未完了"}</span>
+                      <span>{timeAgo(todo.created_at)}</span>
+                    </div>
+                  ))}
+
+                  {todos.length === 0 && (
+                    <div className="empty-row">TODO がまだ登録されていません。</div>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
+
+          {activeTab === "issues" && (
+            <section className="issues-panel">
+              <div className="section-head">
+                <h2>GitHub Issues</h2>
+              </div>
+
+              <div className="issue-table">
+                <div className="issue-row issue-head">
+                  <span>タイトル</span>
+                  <span>ラベル</span>
+                  <span>状態</span>
+                  <span>更新日</span>
+                </div>
+
+                {githubIssues.map((issue) => (
+                  <div className="issue-row" key={issue.number}>
+                    <span>
+                      <i className="ok-dot" />
+                      #{issue.number}　{issue.title}
+                    </span>
+                    <span>{issue.labels?.join(", ") || "-"}</span>
+                    <span>{issue.state}</span>
+                    <span>{timeAgo(issue.updated_at)}</span>
+                  </div>
+                ))}
+
+                {githubIssues.length === 0 && (
+                  <div className="empty-row">GitHub Issue はありません。</div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "commits" && (
+            <section className="issues-panel">
+              <div className="section-head">
+                <h2>GitHub Commit履歴</h2>
+              </div>
+
+              <div className="github-commit-list">
+                {commits.map((commit, index) => (
+                  <article
+                    key={`${commit.sha || commit.hash || "commit"}-${index}`}
+                    className="github-commit-card"
+                  >
+                    <div>
+                      <b>{commit.message}</b>
+                      <p>
+                        {commit.author_name || "unknown"}　
+                        {formatDate(commit.author_date || commit.committed_at)}
+                      </p>
+                      <small>{commit.sha?.slice(0, 7) || commit.hash?.slice(0, 7) || "-"}</small>
+                    </div>
+
+                    {commit.html_url && (
+                      <a href={commit.html_url} target="_blank" rel="noreferrer">
+                        GitHub
+                      </a>
+                    )}
+                  </article>
+                ))}
+
+                {commits.length === 0 && (
+                  <p className="muted">コミット履歴はありません。</p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "branches" && (
+            <section className="issues-panel">
+              <div className="section-head">
+                <h2>GitHub Branches</h2>
+              </div>
+
+              <div className="issue-table">
+                <div className="issue-row issue-head">
+                  <span>ブランチ名</span>
+                  <span>保護</span>
+                  <span>SHA</span>
+                </div>
+
+                {githubBranches.map((branch) => (
+                  <div className="issue-row" key={branch.name}>
+                    <span>⑃ {branch.name}</span>
+                    <span>{branch.protected ? "Protected" : "-"}</span>
+                    <span>{branch.sha?.slice(0, 7) || "-"}</span>
+                  </div>
+                ))}
+
+                {githubBranches.length === 0 && (
+                  <div className="empty-row">ブランチ情報はありません。</div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "tags" && (
+            <section className="issues-panel">
+              <div className="section-head">
+                <h2>GitHub Tags</h2>
+              </div>
+
+              <div className="issue-table">
+                <div className="issue-row issue-head">
+                  <span>タグ名</span>
+                  <span>SHA</span>
+                </div>
+
+                {githubTags.map((tag) => (
+                  <div className="issue-row" key={tag.name}>
+                    <span>◇ {tag.name}</span>
+                    <span>{tag.sha?.slice(0, 7) || "-"}</span>
+                  </div>
+                ))}
+
+                {githubTags.length === 0 && (
+                  <div className="empty-row">タグはありません。</div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {activeTab === "settings" && (
+            <section className="issues-panel">
+              <div className="section-head">
+                <h2>プロジェクト設定</h2>
+              </div>
+
+              <div className="empty-row">
+                local_path は上部のローカルパス欄から変更できます。
+              </div>
+            </section>
+          )}
         </section>
 
         <aside className="right-detail-column">

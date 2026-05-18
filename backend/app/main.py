@@ -23,6 +23,9 @@ from .github_service import (
     get_repositories,
     get_repository_commits,
     get_repository_issues,
+    get_repository_overview,
+    get_repository_branches,
+    get_repository_tags,
 )
 from pydantic import BaseModel
 from .folder_picker_service import select_folder
@@ -562,3 +565,89 @@ def get_project_commits(
     db: Session = Depends(get_db),
 ):
     return crud.get_project_commits(db, project_id)
+
+def parse_github_owner_repo(github_url: str | None):
+    if not github_url:
+        return None, None
+
+    parts = github_url.rstrip("/").replace(".git", "").split("/")
+
+    if len(parts) < 2:
+        return None, None
+
+    return parts[-2], parts[-1]
+
+
+@app.get("/api/projects/{project_id}/github-overview")
+def read_project_github_overview(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    owner, repo = parse_github_owner_repo(db_project.github_url)
+
+    if not owner or not repo:
+        return {"ok": False, "error": "GitHub URLが未設定です。", "repository": None}
+
+    return get_repository_overview(owner, repo)
+
+
+@app.get("/api/projects/{project_id}/github-issues")
+def read_project_github_issues(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    owner, repo = parse_github_owner_repo(db_project.github_url)
+
+    if not owner or not repo:
+        return {"ok": False, "error": "GitHub URLが未設定です。", "issues": []}
+
+    return get_repository_issues(owner, repo)
+
+
+@app.get("/api/projects/{project_id}/github-commits")
+def read_project_github_commits(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    owner, repo = parse_github_owner_repo(db_project.github_url)
+
+    if not owner or not repo:
+        return {"ok": False, "error": "GitHub URLが未設定です。", "commits": []}
+
+    return get_repository_commits(owner, repo)
+
+
+@app.get("/api/projects/{project_id}/github-branches")
+def read_project_github_branches(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    owner, repo = parse_github_owner_repo(db_project.github_url)
+
+    if not owner or not repo:
+        return {"ok": False, "error": "GitHub URLが未設定です。", "branches": []}
+
+    return get_repository_branches(owner, repo)
+
+
+@app.get("/api/projects/{project_id}/github-tags")
+def read_project_github_tags(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    owner, repo = parse_github_owner_repo(db_project.github_url)
+
+    if not owner or not repo:
+        return {"ok": False, "error": "GitHub URLが未設定です。", "tags": []}
+
+    return get_repository_tags(owner, repo)

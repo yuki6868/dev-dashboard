@@ -319,3 +319,85 @@ def get_repository_issues(owner: str, repo: str):
         "ok": True,
         "issues": issues,
     }
+
+def get_repository_overview(owner: str, repo: str):
+    settings = get_settings()
+    token = settings.get("github", {}).get("token")
+
+    if not token:
+        return {"ok": False, "error": "GitHubが未連携です。", "repository": None}
+
+    result = _request_github(f"/repos/{owner}/{repo}", token)
+
+    if not result["ok"]:
+        return {"ok": False, "error": result.get("error"), "repository": None}
+
+    repo_data = result["data"]
+
+    return {
+        "ok": True,
+        "repository": {
+            "name": repo_data.get("name"),
+            "full_name": repo_data.get("full_name"),
+            "description": repo_data.get("description"),
+            "html_url": repo_data.get("html_url"),
+            "private": repo_data.get("private"),
+            "language": repo_data.get("language"),
+            "default_branch": repo_data.get("default_branch"),
+            "updated_at": repo_data.get("updated_at"),
+            "pushed_at": repo_data.get("pushed_at"),
+            "open_issues_count": repo_data.get("open_issues_count"),
+            "stargazers_count": repo_data.get("stargazers_count"),
+            "forks_count": repo_data.get("forks_count"),
+        },
+    }
+
+
+def get_repository_branches(owner: str, repo: str):
+    settings = get_settings()
+    token = settings.get("github", {}).get("token")
+
+    if not token:
+        return {"ok": False, "error": "GitHubが未連携です。", "branches": []}
+
+    result = _request_github(f"/repos/{owner}/{repo}/branches?per_page=100", token)
+
+    if not result["ok"]:
+        return {"ok": False, "error": result.get("error"), "branches": []}
+
+    branches = [
+        {
+            "name": branch.get("name"),
+            "protected": branch.get("protected"),
+            "sha": branch.get("commit", {}).get("sha"),
+            "commit_url": branch.get("commit", {}).get("url"),
+        }
+        for branch in result["data"]
+    ]
+
+    return {"ok": True, "branches": branches}
+
+
+def get_repository_tags(owner: str, repo: str):
+    settings = get_settings()
+    token = settings.get("github", {}).get("token")
+
+    if not token:
+        return {"ok": False, "error": "GitHubが未連携です。", "tags": []}
+
+    result = _request_github(f"/repos/{owner}/{repo}/tags?per_page=100", token)
+
+    if not result["ok"]:
+        return {"ok": False, "error": result.get("error"), "tags": []}
+
+    tags = [
+        {
+            "name": tag.get("name"),
+            "sha": tag.get("commit", {}).get("sha"),
+            "zipball_url": tag.get("zipball_url"),
+            "tarball_url": tag.get("tarball_url"),
+        }
+        for tag in result["data"]
+    ]
+
+    return {"ok": True, "tags": tags}

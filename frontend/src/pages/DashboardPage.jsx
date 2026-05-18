@@ -70,6 +70,83 @@ function projectIcon(name = "P") {
   return name.trim().slice(0, 2).toUpperCase();
 }
 
+function normalizeTechName(value) {
+  if (!value) return null;
+
+  const name = String(value).trim();
+  if (!name) return null;
+
+  const aliases = {
+    Javascript: "JavaScript",
+    JS: "JavaScript",
+    Typescript: "TypeScript",
+    TS: "TypeScript",
+    Dockerfile: "Docker",
+  };
+
+  return aliases[name] || name;
+}
+
+function extractTechName(item) {
+  if (!item) return null;
+  if (typeof item === "string") return normalizeTechName(item);
+
+  return normalizeTechName(
+    item.language ||
+    item.name ||
+    item.tech ||
+    item.label ||
+    item.key
+  );
+}
+
+function extractTechWeight(item) {
+  if (!item || typeof item === "string") return 1;
+
+  return Number(
+    item.lines_count ||
+    item.files_count ||
+    item.percentage ||
+    item.percent ||
+    item.value ||
+    1
+  );
+}
+
+function buildFavoriteTechTags(projects, manualTags = []) {
+  const normalizedManualTags = (manualTags || [])
+    .map(normalizeTechName)
+    .filter(Boolean);
+
+  if (normalizedManualTags.length) {
+    return Array.from(new Set(normalizedManualTags)).slice(0, 12);
+  }
+
+  const totals = new Map();
+
+  projects.forEach((project) => {
+    const tech = project.tech_stack || project.languages || project.language_stats || [];
+
+    if (Array.isArray(tech)) {
+      tech.forEach((item) => {
+        const name = extractTechName(item);
+        if (!name) return;
+
+        const weight = extractTechWeight(item);
+        totals.set(
+          name,
+          (totals.get(name) || 0) + (Number.isFinite(weight) ? weight : 1)
+        );
+      });
+    }
+  });
+
+  return Array.from(totals.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ja"))
+    .slice(0, 12)
+    .map(([name]) => name);
+}
+
 function buildTechRows(projects) {
   const totals = new Map();
 
@@ -229,14 +306,25 @@ async function fetchAll({ forceSync = false } = {}) {
     }));
   }, [worklog]);
 
-  const techRows = useMemo(() => {
-    const projectsWithTech = projects.map((project) => ({
+  const projectsWithTech = useMemo(() => {
+    return projects.map((project) => ({
       ...project,
-      tech_stack: projectTechStacks[project.id] || [],
+      tech_stack: projectTechStacks[project.id]?.length
+        ? projectTechStacks[project.id]
+        : project.tech_stack || [],
     }));
-
-    return buildTechRows(projectsWithTech);
   }, [projects, projectTechStacks]);
+
+  const techRows = useMemo(() => {
+    return buildTechRows(projectsWithTech);
+  }, [projectsWithTech]);
+
+  const favoriteTechTags = useMemo(() => {
+    return buildFavoriteTechTags(
+      projectsWithTech,
+      settings?.dashboard?.favorite_tech_tags || []
+    );
+  }, [projectsWithTech, settings]);
 
   const progressRows = useMemo(() => {
     return topProjects.map((project) => {
@@ -542,9 +630,13 @@ async function fetchAll({ forceSync = false } = {}) {
           <section className="panel tags-card">
             <h2>よく使う技術タグ</h2>
             <div className="tag-cloud">
-              {["Python", "FastAPI", "React", "SQLite", "Docker", "Ollama", "Chrome拡張", "JavaScript", "TypeScript", "Tailwind CSS"].map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
+              {favoriteTechTags.length ? (
+                favoriteTechTags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))
+              ) : (
+                <span className="tag-empty">技術スタックを取得すると表示されます</span>
+              )}
             </div>
           </section>
         </div>

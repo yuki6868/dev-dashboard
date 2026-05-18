@@ -20,6 +20,7 @@ DEFAULT_SETTINGS = {
         "uncommitted_warning_count": 5,
         "inactive_days_warning": 7,
         "todo_stale_days": 5,
+        "favorite_tech_tags": [],
     },
     "todo": {
         "default_priority": "medium",

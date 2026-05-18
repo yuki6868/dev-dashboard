@@ -23,6 +23,13 @@ function Field({ label, children }) {
   );
 }
 
+function splitTags(value) {
+  return value
+    .split(/[\n,、]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState(null);
   const [saved, setSaved] = useState(false);
@@ -63,6 +70,16 @@ export default function SettingsPage() {
     } catch (error) {
       setGithubMessage("GitHub連携状態の取得に失敗しました。");
     }
+  }
+
+  function patchFavoriteTechTags(value) {
+    setSettings((prev) => ({
+        ...prev,
+        dashboard: {
+        ...prev.dashboard,
+        favorite_tech_tags: splitTags(value),
+        },
+    }));
   }
 
   async function connectGithub() {
@@ -311,6 +328,14 @@ export default function SettingsPage() {
 
             <Field label="TODO放置日数">
               <input type="number" value={settings.dashboard.todo_stale_days} onChange={(e) => patch("dashboard", "todo_stale_days", Number(e.target.value))} />
+            </Field>
+
+            <Field label="よく使う技術タグ（空なら自動）">
+              <input
+                value={(settings.dashboard.favorite_tech_tags || []).join(", ")}
+                placeholder="例: Python, FastAPI, React"
+                onChange={(e) => patchFavoriteTechTags(e.target.value)}
+              />
             </Field>
           </div>
 

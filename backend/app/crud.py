@@ -344,6 +344,7 @@ def save_github_issues_as_todos(
 ):
     inserted = 0
     updated = 0
+    completed = 0
 
     for issue in issues:
         html_url = issue.get("html_url")
@@ -353,45 +354,56 @@ def save_github_issues_as_todos(
             continue
 
         labels = issue.get("labels") or []
+        lower_labels = [str(label).lower() for label in labels]
 
         todo_type = "Issue"
         priority = "medium"
 
-        lower_labels = [str(label).lower() for label in labels]
-
-        if "bug" in lower_labels:
+        if any(label in lower_labels for label in ["bug", "不具合"]):
             todo_type = "Bug"
             priority = "high"
-        elif "enhancement" in lower_labels:
+        elif any(label in lower_labels for label in ["enhancement", "feature", "改善"]):
             todo_type = "Improve"
-        elif "documentation" in lower_labels or "docs" in lower_labels:
+        elif any(label in lower_labels for label in ["documentation", "docs", "readme"]):
             todo_type = "Docs"
-        elif "todo" in lower_labels:
+        elif any(label in lower_labels for label in ["task", "todo"]):
             todo_type = "Todo"
 
-        description = "\n".join(
-            [
-                f"GitHub Issue: {html_url}",
-                f"Issue No: #{issue.get('number')}",
-                f"Labels: {', '.join(labels) if labels else '-'}",
-                "",
-                issue.get("body") or "",
-            ]
-        )
+        if any(label in lower_labels for label in ["high", "priority: high", "重要"]):
+            priority = "high"
+        elif any(label in lower_labels for label in ["low", "priority: low", "低"]):
+            priority = "low"
 
-        existing = get_todo_by_github_url(
-            db,
-            project_id,
-            html_url,
-        )
+        is_closed = issue.get("state") == "closed"
+        status = "completed" if is_closed else "open"
+
+        description = "\n".join([
+            "Source: GitHub",
+            f"GitHub Issue: {html_url}",
+            f"Issue No: #{issue.get('number')}",
+            f"State: {issue.get('state')}",
+            f"Labels: {', '.join(labels) if labels else '-'}",
+            "",
+            issue.get("body") or "",
+        ])
+
+        existing = get_todo_by_github_url(db, project_id, html_url)
 
         if existing is not None:
             existing.title = title
             existing.description = description
             existing.todo_type = todo_type
             existing.priority = priority
-            existing.status = "open"
-            existing.is_completed = False
+            existing.status = status
+            existing.is_completed = is_closed
+
+            if is_closed and existing.completed_at is None:
+                existing.completed_at = datetime.utcnow()
+                completed += 1
+
+            if not is_closed:
+                existing.completed_at = None
+
             updated += 1
             continue
 
@@ -401,8 +413,9 @@ def save_github_issues_as_todos(
             description=description,
             todo_type=todo_type,
             priority=priority,
-            status="open",
-            is_completed=False,
+            status=status,
+            is_completed=is_closed,
+            completed_at=datetime.utcnow() if is_closed else None,
         )
 
         db.add(db_todo)
@@ -413,4 +426,5 @@ def save_github_issues_as_todos(
     return {
         "inserted": inserted,
         "updated": updated,
+        "completed": completed,
     }

@@ -664,7 +664,12 @@ async function fetchAll({ forceSync = false } = {}) {
                   <td>{row.name}</td>
                   <td>{row.errorMessage ? "READMEなし" : `${row.percentage}%`}</td>
                   {row.checks.map((ok, index) => (
-                    <td key={index}>{ok ? "✓" : "×"}</td>
+                    <td
+                      key={index}
+                      className={ok ? "check-ok" : "check-ng"}
+                    >
+                      {ok ? "✓" : "×"}
+                    </td>
                   ))}
                 </tr>
               ))}

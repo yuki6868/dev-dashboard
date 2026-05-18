@@ -282,7 +282,7 @@ def get_repository_issues(owner: str, repo: str):
         }
 
     result = _request_github(
-        f"/repos/{owner}/{repo}/issues?state=open&per_page=50",
+        f"/repos/{owner}/{repo}/issues?state=all&per_page=100",
         token,
     )
 

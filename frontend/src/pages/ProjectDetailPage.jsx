@@ -110,24 +110,34 @@ export default function ProjectDetailPage({ settings }) {
   const [githubIssues, setGithubIssues] = useState([]);
   const [githubBranches, setGithubBranches] = useState([]);
   const [githubTags, setGithubTags] = useState([]);
+  const [refreshStatus, setRefreshStatus] = useState({});
+  const [diagnostics, setDiagnostics] = useState(null);
+  const [readmeForm, setReadmeForm] = useState({
+    status: "",
+    priority: "",
+    next_action: "",
+    problem: "",
+    tags: "",
+  });
 
   useEffect(() => {
     fetchProjectDetail();
+    loadRefreshStatus();
     // fetchCommits();
   }, [projectId]);
 
 async function fetchProjectDetail({ forceSync = false } = {}) {
   setLoading(true);
 
-  if (forceSync) {
-    clearApiCache();
+//   if (forceSync) {
+//     clearApiCache();
 
-    await Promise.allSettled([
-      api.post("/api/github/sync-projects"),
-      api.post("/api/github/sync-commits"),
-      api.post("/api/github/sync-issues"),
-    ]);
-  }
+//     await Promise.allSettled([
+//       api.post("/api/github/sync-projects"),
+//       api.post("/api/github/sync-commits"),
+//       api.post("/api/github/sync-issues"),
+//     ]);
+//   }
 
   const [
     projectRes,
@@ -166,7 +176,16 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
   if (gitRes.status === "fulfilled") setGitStatus(gitRes.value.data);
   if (techRes.status === "fulfilled") setTechStack(techRes.value.data);
   if (readmeQualityRes.status === "fulfilled") setReadmeQuality(readmeQualityRes.value.data);
-  if (readmeDashboardRes.status === "fulfilled") setReadmeDashboard(readmeDashboardRes.value.data);
+  if (readmeDashboardRes.status === "fulfilled") {
+    const dashboard = readmeDashboardRes.value.data;
+    setReadmeForm({
+        status: dashboard?.status || "",
+        priority: dashboard?.priority || "",
+        next_action: dashboard?.next_action || "",
+        problem: dashboard?.problem || "",
+        tags: (dashboard?.tags || []).join(", "),
+    });
+  }
   if (todosRes.status === "fulfilled") setTodos(todosRes.value.data || []);
   if (devNotesRes.status === "fulfilled") setDevNotes(devNotesRes.value.data || []);
   if (detailRes.status === "fulfilled") setDetail(detailRes.value.data);
@@ -279,6 +298,58 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
     }
   }
 
+  async function loadRefreshStatus() {
+    const res = await api.get(`/api/projects/${projectId}/refresh-status`);
+    setRefreshStatus(res.data || {});
+  }
+
+  async function loadDiagnostics() {
+    const res = await api.get(`/api/projects/${projectId}/diagnostics`);
+    setDiagnostics(res.data);
+  }
+
+  async function runRefresh(kind) {
+    clearApiCache();
+
+    setRefreshStatus((current) => ({
+        ...current,
+        [kind]: {
+        kind,
+        state: "running",
+        message: "更新中",
+        started_at: new Date().toISOString(),
+        finished_at: null,
+        error: null,
+        },
+    }));
+
+    const res = await api.post(`/api/projects/${projectId}/refresh/${kind}`);
+
+    setRefreshStatus(res.data.refresh_status || {});
+
+    await fetchProjectDetail();
+
+    if (!res.data.ok) {
+        alert(res.data.error || "更新に失敗しました。");
+    }
+  }
+
+  async function saveReadmeDashboard() {
+    clearApiCache();
+
+    const res = await api.put(`/api/projects/${projectId}/readme-dashboard`, {
+        ...readmeForm,
+        tags: readmeForm.tags
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    });
+
+    setReadmeDashboard(res.data.dashboard);
+    await fetchProjectDetail();
+    alert("README Dashboard を保存しました。");
+  }
+
   const techItems = useMemo(() => normalizeTechItems(techStack), [techStack]);
 
   const openTodos = todos.filter((todo) => !todo.is_completed);
@@ -346,9 +417,12 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
             <Link to="/settings">⚙ 設定</Link>
         </nav>
 
-        <div className="sync-state">
-          <span className="dot" /> 自動更新: ON
-          <button type="button" onClick={() => fetchProjectDetail({ forceSync: true })}>↻</button>
+        <div className="sync-state project-top-status">
+            <span className="dot" />
+            <span>自動更新</span>
+            <button type="button" onClick={loadRefreshStatus}>
+                状態確認
+            </button>
         </div>
       </header>
 
@@ -411,6 +485,25 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
             >
               <span>◇ タグ</span>
               <em>{githubTags.length}</em>
+            </button>
+
+            <button
+            type="button"
+            className={activeTab === "diagnostics" ? "active" : ""}
+            onClick={() => {
+                setActiveTab("diagnostics");
+                loadDiagnostics();
+            }}
+            >
+            <span>診断</span>
+            </button>
+
+            <button
+            type="button"
+            className={activeTab === "readme-edit" ? "active" : ""}
+            onClick={() => setActiveTab("readme-edit")}
+            >
+            <span>README編集</span>
             </button>
 
             <button
@@ -500,13 +593,105 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
             </div>        
           </div>
 
+          <div className="project-refresh-toolbar">
+            <button type="button" onClick={() => runRefresh("git")}>Git更新</button>
+            <button type="button" onClick={() => runRefresh("github")}>GitHub同期</button>
+            <button type="button" onClick={() => runRefresh("readme")}>README再読込</button>
+            <button type="button" onClick={() => runRefresh("tech")}>技術再集計</button>
+            <button type="button" onClick={() => runRefresh("issues")}>Issue/TODO同期</button>
+          </div>
+
+          <div className="refresh-status-panel">
+            {["git", "github", "readme", "tech", "issues"].map((kind) => {
+                const item = refreshStatus[kind];
+
+                return (
+                <div className={`refresh-status-item ${item?.state || "idle"}`} key={kind}>
+                    <b>{kind}</b>
+                    <span>
+                    {item?.state === "running"
+                        ? "更新中"
+                        : item?.state === "success"
+                        ? "成功"
+                        : item?.state === "failed"
+                            ? "失敗"
+                            : "未実行"}
+                    </span>
+                    <small>
+                    最終更新: {item?.finished_at ? formatDate(item.finished_at) : "-"}
+                    </small>
+                </div>
+                );
+            })}
+          </div>
+
           <div className="detail-tabs">
-            <button className={activeTab === "overview" ? "active" : ""} onClick={() => setActiveTab("overview")}>概要</button>
-            <button className={activeTab === "issues" ? "active" : ""} onClick={() => setActiveTab("issues")}>Issues</button>
-            <button className={activeTab === "commits" ? "active" : ""} onClick={() => setActiveTab("commits")}>コミット</button>
-            <button className={activeTab === "branches" ? "active" : ""} onClick={() => setActiveTab("branches")}>ブランチ</button>
-            <button className={activeTab === "tags" ? "active" : ""} onClick={() => setActiveTab("tags")}>タグ</button>
-            <button className={activeTab === "settings" ? "active" : ""} onClick={() => setActiveTab("settings")}>設定</button>
+            <button
+                type="button"
+                className={activeTab === "overview" ? "active" : ""}
+                onClick={() => setActiveTab("overview")}
+            >
+                概要
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "issues" ? "active" : ""}
+                onClick={() => setActiveTab("issues")}
+            >
+                Issues
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "commits" ? "active" : ""}
+                onClick={() => setActiveTab("commits")}
+            >
+                コミット
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "branches" ? "active" : ""}
+                onClick={() => setActiveTab("branches")}
+            >
+                ブランチ
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "tags" ? "active" : ""}
+                onClick={() => setActiveTab("tags")}
+            >
+                タグ
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "diagnostics" ? "active" : ""}
+                onClick={() => {
+                setActiveTab("diagnostics");
+                loadDiagnostics();
+                }}
+            >
+                診断
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "readme-edit" ? "active" : ""}
+                onClick={() => setActiveTab("readme-edit")}
+            >
+                README編集
+            </button>
+
+            <button
+                type="button"
+                className={activeTab === "settings" ? "active" : ""}
+                onClick={() => setActiveTab("settings")}
+            >
+                設定
+            </button>
           </div>
 
           {activeTab === "overview" && (
@@ -712,6 +897,83 @@ async function fetchProjectDetail({ forceSync = false } = {}) {
                   <div className="empty-row">タグはありません。</div>
                 )}
               </div>
+            </section>
+          )}
+
+          {activeTab === "diagnostics" && (
+            <section className="issues-panel">
+                <div className="section-head">
+                <h2>プロジェクト診断</h2>
+                <button type="button" onClick={loadDiagnostics}>再診断</button>
+                </div>
+
+                <div className="diagnostic-list">
+                {(diagnostics?.checks || []).map((check) => (
+                    <div className={`diagnostic-row ${check.ok ? "ok" : "ng"}`} key={check.key}>
+                    <b>{check.ok ? "✓" : "×"}</b>
+                    <span>
+                        <strong>{check.label}</strong>
+                        <small>{check.message}</small>
+                    </span>
+                    </div>
+                ))}
+                </div>
+            </section>
+          )}
+
+          {activeTab === "readme-edit" && (
+            <section className="issues-panel">
+                <div className="section-head">
+                <h2>README Dashboard 編集</h2>
+                <button type="button" onClick={saveReadmeDashboard}>READMEへ保存</button>
+                </div>
+
+                <div className="readme-edit-form">
+                <label>
+                    status
+                    <input
+                    value={readmeForm.status}
+                    onChange={(e) => setReadmeForm((v) => ({ ...v, status: e.target.value }))}
+                    placeholder="active / paused / done"
+                    />
+                </label>
+
+                <label>
+                    priority
+                    <input
+                    value={readmeForm.priority}
+                    onChange={(e) => setReadmeForm((v) => ({ ...v, priority: e.target.value }))}
+                    placeholder="high / medium / low"
+                    />
+                </label>
+
+                <label>
+                    next
+                    <textarea
+                    value={readmeForm.next_action}
+                    onChange={(e) => setReadmeForm((v) => ({ ...v, next_action: e.target.value }))}
+                    placeholder="次にやること"
+                    />
+                </label>
+
+                <label>
+                    problem
+                    <textarea
+                    value={readmeForm.problem}
+                    onChange={(e) => setReadmeForm((v) => ({ ...v, problem: e.target.value }))}
+                    placeholder="詰まっていること"
+                    />
+                </label>
+
+                <label>
+                    tags
+                    <input
+                    value={readmeForm.tags}
+                    onChange={(e) => setReadmeForm((v) => ({ ...v, tags: e.target.value }))}
+                    placeholder="React, FastAPI, SQLite"
+                    />
+                </label>
+                </div>
             </section>
           )}
 

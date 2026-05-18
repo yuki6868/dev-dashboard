@@ -120,3 +120,61 @@ def parse_dashboard_metadata(local_path: str) -> dict:
             result[mapped_key] = value
 
     return result
+
+def build_dashboard_section(payload: dict) -> str:
+    tags = payload.get("tags") or []
+    if isinstance(tags, str):
+        tags = [tag.strip() for tag in tags.replace("、", ",").split(",") if tag.strip()]
+
+    return "\n".join([
+        "## Dashboard",
+        f"- status: {payload.get('status') or ''}",
+        f"- priority: {payload.get('priority') or ''}",
+        f"- next: {payload.get('next_action') or payload.get('next') or ''}",
+        f"- problem: {payload.get('problem') or ''}",
+        f"- tags: {', '.join(tags)}",
+        "",
+    ])
+
+
+def update_dashboard_metadata(local_path: str, payload: dict) -> dict:
+    path_error = validate_local_path(local_path)
+    if path_error:
+        return {"ok": False, "error": path_error["message"]}
+
+    readme_path = find_readme_path(local_path)
+
+    if readme_path is None:
+        readme_path = Path(local_path) / "README.md"
+        text = ""
+    else:
+        text = readme_path.read_text(encoding="utf-8", errors="ignore")
+
+    new_section = build_dashboard_section(payload)
+    lines = text.splitlines()
+    start = None
+    end = None
+
+    for i, line in enumerate(lines):
+        if line.strip().lower() == "## dashboard":
+            start = i
+            break
+
+    if start is not None:
+        end = len(lines)
+        for i in range(start + 1, len(lines)):
+            if lines[i].startswith("## "):
+                end = i
+                break
+
+        updated = "\n".join(lines[:start] + new_section.splitlines() + lines[end:]).strip() + "\n"
+    else:
+        updated = text.rstrip() + "\n\n" + new_section
+
+    readme_path.write_text(updated, encoding="utf-8")
+
+    return {
+        "ok": True,
+        "readme_path": str(readme_path),
+        "dashboard": parse_dashboard_metadata(local_path),
+    }

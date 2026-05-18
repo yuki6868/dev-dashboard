@@ -6,7 +6,6 @@ from typing import List, Optional
 from .database import SessionLocal, Base, engine
 from . import crud, schemas
 from .git_service import get_git_status
-from .readme_service import parse_dashboard_metadata
 from .readme_quality_service import check_readme_quality
 from .tech_service import analyze_tech_stack
 from .recommend_service import recommend_next_task
@@ -29,6 +28,9 @@ from .github_service import (
 )
 from pydantic import BaseModel
 from .folder_picker_service import select_folder
+from .readme_service import parse_dashboard_metadata, update_dashboard_metadata
+from .project_health_service import diagnose_project
+from .refresh_service import start_refresh, finish_refresh, get_project_refresh_status
 
 
 Base.metadata.create_all(bind=engine)
@@ -651,3 +653,139 @@ def read_project_github_tags(project_id: int, db: Session = Depends(get_db)):
         return {"ok": False, "error": "GitHub URLが未設定です。", "tags": []}
 
     return get_repository_tags(owner, repo)
+
+@app.get("/api/projects/{project_id}/diagnostics")
+def read_project_diagnostics(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return diagnose_project(db_project)
+
+
+@app.get("/api/projects/{project_id}/refresh-status")
+def read_project_refresh_status(project_id: int, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return get_project_refresh_status(project_id)
+
+
+@app.post("/api/projects/{project_id}/refresh/{kind}")
+def refresh_project_part(project_id: int, kind: str, db: Session = Depends(get_db)):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    allowed = {
+        "git",
+        "github",
+        "readme",
+        "tech",
+        "issues",
+    }
+
+    if kind not in allowed:
+        raise HTTPException(status_code=400, detail="Unknown refresh kind")
+
+    start_refresh(project_id, kind)
+
+    try:
+        if kind == "git":
+            git_status = get_git_status(db_project.local_path)
+            snapshot = crud.create_git_snapshot(db, project_id, git_status)
+            result = {"git_status": git_status, "snapshot_id": snapshot.id}
+
+        elif kind == "github":
+            owner, repo = parse_github_owner_repo(db_project.github_url)
+            if not owner or not repo:
+                raise ValueError("GitHub URLが未設定、または形式が不正です。")
+
+            overview = get_repository_overview(owner, repo)
+            if not overview.get("ok"):
+                raise ValueError(overview.get("error") or "GitHub同期に失敗しました。")
+
+            repository = overview.get("repository") or {}
+            crud.update_project_github_metadata(
+                db,
+                project_id,
+                {
+                    "updated_at": repository.get("updated_at"),
+                    "pushed_at": repository.get("pushed_at"),
+                    "language": repository.get("language"),
+                    "open_issues_count": repository.get("open_issues_count"),
+                    "stargazers_count": repository.get("stargazers_count"),
+                },
+            )
+            result = overview
+
+        elif kind == "readme":
+            result = parse_dashboard_metadata(db_project.local_path)
+
+        elif kind == "tech":
+            result = analyze_tech_stack(db_project.local_path)
+
+        elif kind == "issues":
+            owner, repo = parse_github_owner_repo(db_project.github_url)
+            if not owner or not repo:
+                raise ValueError("GitHub URLが未設定、または形式が不正です。")
+
+            issues = get_repository_issues(owner, repo)
+            if not issues.get("ok"):
+                raise ValueError(issues.get("error") or "Issue取得に失敗しました。")
+
+            result = crud.save_github_issues_as_todos(
+                db,
+                project_id,
+                issues.get("issues", []),
+            )
+
+        finish_refresh(project_id, kind, "成功")
+        return {
+            "ok": True,
+            "kind": kind,
+            "result": result,
+            "refresh_status": get_project_refresh_status(project_id),
+        }
+
+    except Exception as e:
+        finish_refresh(project_id, kind, "失敗", str(e))
+        return {
+            "ok": False,
+            "kind": kind,
+            "error": str(e),
+            "refresh_status": get_project_refresh_status(project_id),
+        }
+
+
+@app.put("/api/projects/{project_id}/readme-dashboard")
+def update_project_readme_dashboard(
+    project_id: int,
+    payload: dict,
+    db: Session = Depends(get_db),
+):
+    db_project = crud.get_project(db, project_id)
+
+    if db_project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    result = update_dashboard_metadata(db_project.local_path, payload)
+
+    if not result.get("ok"):
+        raise HTTPException(status_code=400, detail=result.get("error"))
+
+    crud.update_project(
+        db,
+        project_id,
+        schemas.ProjectUpdate(
+            status=payload.get("status"),
+            priority=payload.get("priority"),
+            next_action=payload.get("next_action") or payload.get("next"),
+        ),
+    )
+
+    return result

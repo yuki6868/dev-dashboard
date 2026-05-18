@@ -8,6 +8,8 @@ from sqlalchemy.orm import Session
 from . import models
 from .error_service import run_git_command
 
+from .settings_service import get_settings
+
 
 def parse_date(value):
     if value is None:
@@ -142,15 +144,32 @@ def get_worklog(db: Session, target_date_text: str | None = None):
     project_minutes = defaultdict(int)
     type_counts = defaultdict(int)
 
+    settings = get_settings()
+    worklog_settings = settings.get("worklog", {})
+
+    commit_minutes = int(worklog_settings.get("commit_minutes", 30))
+    todo_completed_minutes = int(worklog_settings.get("todo_completed_minutes", 15))
+    todo_created_minutes = int(worklog_settings.get("todo_created_minutes", 10))
+
     for entry in entries:
         type_counts[entry["type"]] += 1
-        project_minutes[entry["project_name"]] += 30 if entry["type"] == "commit" else 15
+
+        if entry["type"] == "commit":
+            project_minutes[entry["project_name"]] += commit_minutes
+        elif entry["type"] == "todo_completed":
+            project_minutes[entry["project_name"]] += todo_completed_minutes
+        elif entry["type"] == "todo_created":
+            project_minutes[entry["project_name"]] += todo_created_minutes
 
     commit_count = type_counts["commit"]
     completed_count = type_counts["todo_completed"]
     created_count = type_counts["todo_created"]
 
-    estimated_minutes = commit_count * 30 + completed_count * 15 + created_count * 10
+    estimated_minutes = (
+        commit_count * commit_minutes
+        + completed_count * todo_completed_minutes
+        + created_count * todo_created_minutes
+    )
 
     recent_projects = [
         {
@@ -168,22 +187,28 @@ def get_worklog(db: Session, target_date_text: str | None = None):
 
     for i in range(6, -1, -1):
         day = date.today() - timedelta(days=i)
-        count = 0
+        todo_count = 0
+        commit_count_for_day = 0
+
+        for project in projects:
+            commit_count_for_day += len(get_git_commits(project, day))
 
         for todo in todos:
             created_at = parse_date(todo.created_at)
             completed_at = parse_date(todo.completed_at)
 
             if created_at and created_at.date() == day:
-                count += 1
+                todo_count += 1
 
             if completed_at and completed_at.date() == day:
-                count += 1
+                todo_count += 1
 
         daily_counts.append({
             "date": day.isoformat(),
             "label": day.strftime("%m/%d"),
-            "count": count,
+            "count": todo_count,
+            "commit_count": commit_count_for_day,
+            "todo_count": todo_count,
         })
 
     return {

@@ -170,13 +170,7 @@ function buildTechRows(projects) {
   });
 
   if (!totals.size) {
-    return [
-      { name: "Python", value: 45 },
-      { name: "JavaScript", value: 30 },
-      { name: "SQL", value: 10 },
-      { name: "HTML/CSS", value: 10 },
-      { name: "Other", value: 5 },
-    ];
+    return [];
   }
 
   const sum = Array.from(totals.values()).reduce((a, b) => a + b, 0) || 1;
@@ -295,16 +289,16 @@ async function fetchAll({ forceSync = false } = {}) {
   const commitBars = useMemo(() => {
     const rows = worklog?.daily_counts || [];
 
-    if (!rows.length) {
-      return [];
-    }
-
     return rows.map((row) => ({
       day: row.label,
-      commit: row.commit_count || 0,
-      todo: row.count || 0,
+      commit: Number(row.commit_count || 0),
+      todo: Number(row.todo_count ?? row.count ?? 0),
     }));
   }, [worklog]);
+
+  const weeklyCommitCount = useMemo(() => {
+    return commitBars.reduce((sum, row) => sum + Number(row.commit || 0), 0);
+  }, [commitBars]);
 
   const projectsWithTech = useMemo(() => {
     return projects.map((project) => ({
@@ -402,6 +396,10 @@ async function fetchAll({ forceSync = false } = {}) {
     };
   });
 
+  const readmeMissingCount = useMemo(() => {
+    return readmeRows.filter((row) => row.errorMessage || Number(row.percentage || 0) < 100).length;
+  }, [readmeRows]);
+
   return (
     <div className="devos-shell">
       <header className="topbar">
@@ -495,7 +493,7 @@ async function fetchAll({ forceSync = false } = {}) {
           <div className="alert-list">
             <div><span>⚠ 放置プロジェクト</span><b>{summary.alerts}件</b></div>
             <div><span>⚠ TODO過多</span><b>{summary.openTodos}件</b></div>
-            <div><span>⚠ README不足</span><b>{Math.max(summary.total - summary.done, 0)}件</b></div>
+            <div><span>⚠ README不足</span><b>{readmeMissingCount}件</b></div>
             <div><span>▣ Issue未対応</span><b>{summary.issues}件</b></div>
           </div>
           <button type="button" className="full-button">詳細を確認 →</button>
@@ -508,7 +506,7 @@ async function fetchAll({ forceSync = false } = {}) {
             <div><small>総コミット数</small><b>{summary.commits}</b></div>
             <div><small>未対応Issue</small><b>{summary.issues}</b></div>
             <div><small>TODO総数</small><b>{todos.length}</b></div>
-            <div><small>今週のコミット</small><b>{Math.max(3, summary.active * 7)}</b></div>
+            <div><small>今週のコミット</small><b>{weeklyCommitCount}</b></div>
             <div><small>リリース準備中</small><b>{summary.release}</b></div>
           </div>
         </section>
@@ -596,34 +594,41 @@ async function fetchAll({ forceSync = false } = {}) {
           <section className="panel tech-card">
             <h2>技術スタック</h2>
             <div className="tech-body">
-              <ResponsiveContainer width="72%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={techRows}
-                    dataKey="value"
-                    innerRadius={78}
-                    outerRadius={142}
-                    paddingAngle={3}
-                  >
-                    {techRows.map((_, index) => (
-                      <Cell
-                        key={index}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+              {techRows.length === 0 ? (
+                <p className="empty-message">技術スタックを取得すると表示されます</p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="72%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={techRows}
+                        dataKey="value"
+                        innerRadius={78}
+                        outerRadius={142}
+                        paddingAngle={3}
+                      >
+                        {techRows.map((_, index) => (
+                          <Cell
+                            key={index}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  <div className="tech-legend">
+                    {techRows.map((row, index) => (
+                      <div key={row.name}>
+                        <i style={{ background: COLORS[index % COLORS.length] }} />
+                        {row.name}
+                        <b>{row.value}%</b>
+                      </div>
                     ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="tech-legend">
-                {techRows.map((row, index) => (
-                  <div key={row.name}>
-                    <i style={{ background: COLORS[index % COLORS.length] }} />
-                    {row.name}
-                    <b>{row.value}%</b>
                   </div>
-                ))}
-              </div>
+                </>
+              )}
             </div>
           </section>
 
